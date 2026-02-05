@@ -1,0 +1,11 @@
+CLI Testing Matrix:
+- Documents all flag/parameter combinations
+- State machine transition test cases
+- Guard violation scenarios
+- Tangleable to generate test-cli.sh
+
+Usage:
+  make tangle      # Extract test script
+  make test-cli    # Run CLI validation
+
+Based on patterns from clig.dev
