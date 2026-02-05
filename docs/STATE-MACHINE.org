@@ -1,0 +1,309 @@
+#+TITLE: State Machine
+#+AUTHOR: cprr
+#+OPTIONS: toc:2
+
+This document describes the conjecture lifecycle state machine in =cprr=.
+
+* Overview
+
+Every conjecture has a =Status= that tracks its lifecycle from initial hypothesis through validation to conclusion. The state machine enforces preconditions (guards) on transitions to ensure conjectures have proper evidence before advancing.
+
+* States
+
+#+begin_src go
+type Status string
+
+const (
+    StatusOpen       Status = "open"       // Initial state
+    StatusTesting    Status = "testing"    // Under active investigation
+    StatusConfirmed  Status = "confirmed"  // Hypothesis validated (terminal)
+    StatusRefuted    Status = "refuted"    // Hypothesis disproven (terminal)
+    StatusAbandoned  Status = "abandoned"  // Deliberately stopped (terminal)
+)
+#+end_src
+
+** State Descriptions
+
+| State       | Description                                                    | Next Actions                                    |
+|-------------+----------------------------------------------------------------+-------------------------------------------------|
+| =open=      | Initial state when conjecture is created. Hypothesis may or may not be set. | Add hypothesis, advance to =testing=, or abandon |
+| =testing=   | Active investigation. Evidence is being collected.             | Add evidence, advance to =confirmed=/=refuted=, or abandon |
+| =confirmed= | Terminal state. Hypothesis was validated with sufficient evidence. | No further transitions (except abandon)         |
+| =refuted=   | Terminal state. Hypothesis was disproven with evidence.        | No further transitions (except abandon)         |
+| =abandoned= | Terminal state. Investigation was stopped without conclusion.  | No further transitions                          |
+
+* State Diagram
+
+#+begin_example
+                                    ┌─────────────────┐
+                                    │                 │
+                                    │    abandoned    │◄──────────────────┐
+                                    │                 │                   │
+                                    └─────────────────┘                   │
+                                        ▲   ▲   ▲                         │
+                                        │   │   │                         │
+              ┌─────────────────────────┘   │   └─────────────────────┐   │
+              │                             │                         │   │
+              │                             │                         │   │
+    ┌─────────┴─────────┐         ┌────────┴────────┐       ┌────────┴───┴────┐
+    │                   │         │                 │       │                 │
+    │       open        │────────►│     testing     │──────►│    confirmed    │
+    │                   │         │                 │       │                 │
+    └───────────────────┘         └────────┬────────┘       └─────────────────┘
+                                           │
+           [hypothesis]                    │                [2+ evidence]
+                                           │
+                                           │
+                                           ▼
+                                  ┌─────────────────┐
+                                  │                 │
+                                  │     refuted     │
+                                  │                 │
+                                  └─────────────────┘
+
+                                      [1+ evidence]
+#+end_example
+
+* Transitions
+
+** Defined Transitions
+
+The state machine defines the following valid transitions:
+
+#+begin_src go
+var transitions = []Transition{
+    {From: StatusOpen, To: StatusTesting, Guards: [...]},
+    {From: StatusTesting, To: StatusConfirmed, Guards: [...]},
+    {From: StatusTesting, To: StatusRefuted, Guards: [...]},
+    {From: StatusOpen, To: StatusAbandoned, Guards: nil},
+    {From: StatusTesting, To: StatusAbandoned, Guards: nil},
+    {From: StatusConfirmed, To: StatusAbandoned, Guards: nil},
+    {From: StatusRefuted, To: StatusAbandoned, Guards: nil},
+}
+#+end_src
+
+** Forward Path (Happy Path)
+
+The =next= command follows the "forward path" for normal progression:
+
+#+begin_src go
+var forwardPath = map[Status]Status{
+    StatusOpen:    StatusTesting,
+    StatusTesting: StatusConfirmed,
+}
+#+end_src
+
+This means:
+- =cprr next <id>= on an =open= conjecture attempts =open -> testing=
+- =cprr next <id>= on a =testing= conjecture attempts =testing -> confirmed=
+- Terminal states (=confirmed=, =refuted=, =abandoned=) have no forward path
+
+To move to =refuted= instead of =confirmed=, use =cprr status <id> refuted=.
+
+** Transition Table
+
+| From      | To          | Guards                    | Command                      |
+|-----------+-------------+---------------------------+------------------------------|
+| =open=    | =testing=   | hypothesis required       | =cprr next <id>=             |
+| =testing= | =confirmed= | 2+ evidence, hypothesis   | =cprr next <id>=             |
+| =testing= | =refuted=   | 1+ evidence               | =cprr status <id> refuted=   |
+| any       | =abandoned= | none                      | =cprr status <id> abandoned= |
+
+* Guards
+
+Guards are preconditions that must pass before a transition is allowed. They enforce evidence requirements.
+
+** Guard Structure
+
+#+begin_src go
+type Guard struct {
+    Name    string                    // Identifier for the guard
+    Check   func(*Conjecture) bool   // Predicate function
+    Message string                    // Error message if guard fails
+}
+#+end_src
+
+** Defined Guards
+
+*** =hypothesis_required=
+
+Required for: =open -> testing=, =testing -> confirmed=
+
+#+begin_src go
+Guard{
+    Name:    "hypothesis_required",
+    Check:   func(c *Conjecture) bool { return c.Hypothesis != "" },
+    Message: "hypothesis required: use `cprr add ... --hypothesis \"your hypothesis\"`",
+}
+#+end_src
+
+A conjecture cannot enter =testing= without a stated hypothesis. This ensures every investigation has a clear statement to validate or refute.
+
+*** =min_evidence= (for confirmation)
+
+Required for: =testing -> confirmed=
+
+#+begin_src go
+Guard{
+    Name:    "min_evidence",
+    Check:   func(c *Conjecture) bool { return len(c.Evidence) >= 2 },
+    Message: "minimum 2 pieces of evidence required for confirmation",
+}
+#+end_src
+
+Confirmation requires at least 2 pieces of evidence. This prevents premature conclusions based on a single observation.
+
+*** =min_evidence= (for refutation)
+
+Required for: =testing -> refuted=
+
+#+begin_src go
+Guard{
+    Name:    "min_evidence",
+    Check:   func(c *Conjecture) bool { return len(c.Evidence) >= 1 },
+    Message: "at least 1 piece of evidence required to refute",
+}
+#+end_src
+
+Refutation requires at least 1 piece of evidence. A single counterexample is sufficient to disprove a hypothesis.
+
+** Guard Bypass
+
+Two mechanisms exist to bypass guards:
+
+1. =cprr next --force=: Bypasses guards with a warning (not recommended)
+2. =cprr status <id> <status>=: Sets status directly, always bypasses guards
+
+* Evidence Requirements Summary
+
+| Transition             | Evidence Required | Rationale                              |
+|------------------------+-------------------+----------------------------------------|
+| =open -> testing=      | 0                 | Investigation begins, evidence comes later |
+| =testing -> confirmed= | 2+                | Multiple observations reduce false positives |
+| =testing -> refuted=   | 1+                | Single counterexample is sufficient    |
+| =* -> abandoned=       | 0                 | Escape hatch, no evidence needed       |
+
+* CLI Interactions
+
+** Viewing State
+
+#+begin_example
+# List with status indicator
+$ cprr list
+#1   [open      ] Cache hypothesis
+#2   [testing   ] Dark mode engagement
+
+# Detailed view with state machine visualization
+$ cprr show 1
+Conjecture #1
+Title:      Cache hypothesis
+Status:     open
+Hypothesis: Redis cache will reduce p99 by 50%
+Created:    2024-01-15T10:30:00Z
+Updated:    2024-01-15T10:30:00Z
+
+Progress: [open] -> testing -> confirmed
+#+end_example
+
+** Advancing State
+
+#+begin_example
+# Attempt to advance (guards enforced)
+$ cprr next 1
+Cannot advance #1 from 'open' to 'testing'
+
+Guard violations:
+  hypothesis_required: hypothesis required: use `cprr add ... --hypothesis "..."`
+
+# Add hypothesis and try again
+$ cprr add "New idea" --hypothesis "It will work"
+$ cprr next 1
+Advanced #1: open -> testing
+
+To reach 'confirmed':
+  [ ] minimum 2 pieces of evidence required for confirmation
+  [x] hypothesis required to confirm
+#+end_example
+
+** Adding Evidence
+
+#+begin_example
+# Add evidence while in testing
+$ cprr evidence 1 "Baseline: p99 = 450ms"
+Added evidence to #1 (1 total)
+
+Need 1 more evidence to advance.
+
+$ cprr evidence 1 "With cache: p99 = 180ms"
+Added evidence to #1 (2 total)
+
+Ready to advance: cprr next 1
+#+end_example
+
+** Terminal States
+
+#+begin_example
+# Attempt to advance from terminal state
+$ cprr next 3
+#3 is in terminal state 'confirmed'
+
+Terminal states cannot advance further.
+Use 'cprr status' to manually change if needed.
+#+end_example
+
+** Refuting a Hypothesis
+
+#+begin_example
+# Refutation requires explicit status command (not on forward path)
+$ cprr evidence 2 "Counterexample found: user session < 5 minutes"
+Added evidence to #2 (1 total)
+
+$ cprr status 2 refuted
+Updated #2 status to 'refuted' (guards bypassed)
+#+end_example
+
+* Dry Run Mode
+
+The =next= command supports =--dry-run= to preview transitions:
+
+#+begin_example
+$ cprr next 1 --dry-run
+[dry-run] Would advance #1: open -> testing
+
+$ cprr next 1 --dry-run --force
+[dry-run] Would advance #1: open -> testing
+  (with --force, bypassing guards)
+#+end_example
+
+* Doctor Validation
+
+The =cprr doctor= command validates state machine invariants:
+
+#+begin_example
+$ cprr doctor
+cprr doctor
+===========
+
+Store Status:
+  ~/.cprr/conjectures.json: not found
+  .cprr/conjectures.json:   3 conjectures (ACTIVE)
+
+Issues:
+  x #3: confirmed with only 1 evidence (requires 2+)
+  x #2: testing without hypothesis
+#+end_example
+
+This catches conjectures that reached invalid states (e.g., via =--force= or =status= commands).
+
+* Mapping to CPRR Methodology
+
+The state machine maps to the CPRR (Conjecture-Proof-Refutation-Refinement) phases:
+
+| CPRR Phase | Status      | Artifact                 |
+|------------+-------------+--------------------------|
+| Conjecture | =open=      | CONJECTURE.md            |
+| Proof      | =testing=   | Implementation + tests   |
+| Refutation | =testing=   | Adversarial tests        |
+| Refinement | =confirmed= | Code in src/, ADR        |
+
+The =refuted= and =abandoned= states represent failed experiments that provide institutional knowledge.

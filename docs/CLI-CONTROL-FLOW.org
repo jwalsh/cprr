@@ -1,0 +1,260 @@
+#+TITLE: CLI Control Flow
+#+AUTHOR: cprr
+#+OPTIONS: toc:2
+
+This document describes the command parsing and execution flow in the =cprr= CLI tool.
+
+* Overview
+
+The =cprr= CLI is implemented in a single =main.go= file with a straightforward dispatch architecture. Commands are parsed manually without external libraries, keeping dependencies minimal.
+
+* Execution Flow
+
+#+begin_example
+main() ─┬─> parseGlobalFlags()
+        │         │
+        │         └─> Extract -v, -h, -V flags
+        │             Return remaining args
+        │
+        ├─> Handle no-args / help ─> usage()
+        │
+        └─> Dispatch by command name
+                │
+                ├─> Pre-store commands (no store load)
+                │     ├─> init      -> cmdInit()
+                │     ├─> quickstart -> cmdQuickstart()
+                │     ├─> doctor    -> cmdDoctor()
+                │     ├─> help      -> usage()
+                │     └─> version   -> versionInfo()
+                │
+                └─> Store-dependent commands
+                      │
+                      ├─> loadStore() ─> local-first detection
+                      │                  .cprr/ preferred over ~/.cprr/
+                      │
+                      └─> Command dispatch:
+                            ├─> add      -> cmdAdd()
+                            ├─> list/ls  -> cmdList()
+                            ├─> show/get -> cmdShow()
+                            ├─> next     -> cmdNext()
+                            ├─> evidence/ev -> cmdEvidence()
+                            ├─> status   -> cmdStatus()
+                            └─> delete/rm -> cmdDelete()
+#+end_example
+
+* Key Functions
+
+** Entry Point
+
+=main()= (line 303-376)
+
+The entry point handles:
+1. Global flag parsing via =parseGlobalFlags()=
+2. Empty args / help display
+3. Command dispatch via switch statement
+
+#+begin_src go
+func main() {
+    args, showHelp := parseGlobalFlags(os.Args[1:])
+
+    if len(args) == 0 || showHelp {
+        usage()
+        os.Exit(0)
+    }
+
+    cmd := args[0]
+    cmdArgs := args[1:]
+    // ... dispatch logic
+}
+#+end_src
+
+** Global Flag Parsing
+
+=parseGlobalFlags(args []string) ([]string, bool)= (line 273-301)
+
+Parses flags that appear BEFORE the command name:
+- =-v, --version= - Print version and exit
+- =-h, --help= - Set help flag
+- =-V, --verbose= - Enable verbose mode (sets global =verboseMode=)
+
+Returns remaining arguments after global flags are consumed.
+
+** Store Loading
+
+=loadStore() (*Store, error)= (line 140-162)
+
+Implements local-first store detection:
+1. Check if =.cprr/conjectures.json= exists in current directory
+2. If found, set =localMode = true= (use local store)
+3. Otherwise, fall back to =~/.cprr/conjectures.json=
+4. Parse JSON into =Store= struct
+
+** Data Path Resolution
+
+=dataDir() string= (line 126-132)
+
+Returns the directory for data storage:
+- =.cprr= if =localMode= is true
+- =~/.cprr= otherwise
+
+=dataFile() string= (line 134-138)
+
+Returns full path to =conjectures.json=, creating parent directory if needed.
+
+* Command Implementations
+
+** Pre-Store Commands
+
+These commands do not require loading the store first:
+
+| Command     | Function          | Purpose                              |
+|-------------+-------------------+--------------------------------------|
+| =init=      | =cmdInit()=       | Initialize a new store (local by default) |
+| =quickstart= | =cmdQuickstart()= | Interactive tutorial with demo data |
+| =doctor=    | =cmdDoctor()=     | Diagnose store issues, offer migration |
+| =help=      | =usage()=         | Print usage information              |
+| =version=   | =versionInfo()=   | Print version details                |
+
+** Store-Dependent Commands
+
+These load the store before execution:
+
+| Command    | Aliases | Function        | Purpose                    |
+|------------+---------+-----------------+----------------------------|
+| =add=      | -       | =cmdAdd()=      | Create a new conjecture    |
+| =list=     | =ls=    | =cmdList()=     | List conjectures with filters |
+| =show=     | =get=   | =cmdShow()=     | Display conjecture details |
+| =next=     | -       | =cmdNext()=     | Advance state (guards enforced) |
+| =evidence= | =ev=    | =cmdEvidence()= | Add evidence to conjecture |
+| =status=   | -       | =cmdStatus()=   | Set status directly (bypasses guards) |
+| =delete=   | =rm=    | =cmdDelete()=   | Remove a conjecture        |
+
+* Command Argument Parsing Pattern
+
+Each command function follows a consistent pattern:
+
+#+begin_src go
+func cmdExample(store *Store, args []string) {
+    var showHelp bool
+    var optionalFlag string
+    var positional []string
+
+    // Manual flag parsing loop
+    for i := 0; i < len(args); i++ {
+        switch args[i] {
+        case "-h", "--help":
+            showHelp = true
+        case "--flag":
+            if i+1 < len(args) {
+                optionalFlag = args[i+1]
+                i++  // skip next arg
+            }
+        default:
+            positional = append(positional, args[i])
+        }
+    }
+
+    // Help handling
+    if showHelp {
+        fmt.Print(`Usage: ...`)
+        return
+    }
+
+    // Validation
+    if len(positional) < 1 {
+        fmt.Fprintln(os.Stderr, "error: missing required argument")
+        os.Exit(1)
+    }
+
+    // Business logic
+    // ...
+}
+#+end_src
+
+* Command Suggestions
+
+=suggestCommand(input string) string= (line 259-271)
+
+When an unknown command is entered, uses Levenshtein distance to suggest corrections:
+
+#+begin_example
+$ cprr lisst
+error: unknown command 'lisst'
+
+Did you mean: cprr list?
+#+end_example
+
+The =levenshtein()= function (line 216-247) calculates edit distance between strings. Suggestions are only offered if the distance is less than 3.
+
+* Data Structures
+
+** Store
+
+#+begin_src go
+type Store struct {
+    Conjectures []Conjecture `json:"conjectures"`
+    NextID      int          `json:"next_id"`
+    Config      Config       `json:"config,omitempty"`
+}
+#+end_src
+
+** Conjecture
+
+#+begin_src go
+type Conjecture struct {
+    ID          int       `json:"id"`
+    Title       string    `json:"title"`
+    Hypothesis  string    `json:"hypothesis"`
+    Evidence    []string  `json:"evidence,omitempty"`
+    Status      Status    `json:"status"`
+    Tags        []string  `json:"tags,omitempty"`
+    CreatedAt   time.Time `json:"created_at"`
+    UpdatedAt   time.Time `json:"updated_at"`
+}
+#+end_src
+
+* Verbose Mode
+
+When =--verbose= / =-V= is passed before the command, the =verbose()= function logs additional information:
+
+#+begin_src go
+func verbose(format string, args ...interface{}) {
+    if verboseMode {
+        fmt.Fprintf(os.Stderr, "[verbose] "+format+"\n", args...)
+    }
+}
+#+end_src
+
+Example output:
+#+begin_example
+$ cprr -V list
+[verbose] command=list args=[]
+[verbose] store loaded: 3 conjectures
+#1   [open      ] Caching reduces p99 latency by 50%
+...
+#+end_example
+
+* Error Handling
+
+Commands follow Unix conventions:
+- Exit 0: Success or help displayed
+- Exit 1: Error (missing arguments, not found, validation failure)
+
+Error messages are written to stderr with helpful context:
+#+begin_src go
+fmt.Fprintf(os.Stderr, "error: conjecture #%d not found\n", id)
+fmt.Fprintln(os.Stderr, "\nRun 'cprr list' to see available conjectures.")
+os.Exit(1)
+#+end_src
+
+* Local-First Philosophy
+
+The CLI implements a "local-first" approach:
+1. Default =init= creates =.cprr/= in the current directory
+2. When loading, =.cprr/conjectures.json= takes precedence over =~/.cprr/=
+3. The =doctor --migrate= command helps move from global to local
+
+This enables:
+- Git-tracked conjecture state
+- Multi-machine workflows
+- Per-project isolation
