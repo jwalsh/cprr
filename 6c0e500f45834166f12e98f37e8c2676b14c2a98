@@ -1,0 +1,39 @@
+## Session Notes: Multi-Agent Collaboration Testing
+
+### Issues Encountered
+
+1. **Global vs Local Store Desync**: cprr writes to ~/.cprr by default,
+   but repo expects .cprr/. Required repeated `cp ~/.cprr/conjectures.json
+   .cprr/conjectures.json` to sync. Evidence for conjecture #12.
+
+2. **Lost Writes on Sync**: When copying global→local, earlier local
+   changes (from `cprr next`) were overwritten. Conjectures #9, #10
+   reverted to 'open' state after sync.
+
+3. **Evidence Counter Reset**: `cprr evidence` showed "1 total" twice
+   for different evidence items - race between global write and sync.
+
+### Workarounds Applied
+
+- Manual sync after each cprr command: `cp ~/.cprr/... .cprr/...`
+- Created CPRR-qa4 (P1) to fix default behavior
+- Multiple `cprr next` calls needed to advance state
+
+### Timing
+
+- Session duration: ~45 min
+- Commits from this machine: 7
+- Commits from other machine: 1 (quickstart)
+- Merge conflicts: 0 (clean fast-forward merges)
+
+### Deviations from Expected Workflow
+
+- Expected: `cprr add` → `cprr next` → state persists in repo
+- Actual: Required manual sync dance between stores
+- Mitigation: CPRR-qa4 will make --local the default
+
+### Confirmed Hypotheses This Session
+
+- #7: Agent Skills packaging
+- #8: Alloy > TLA+
+- #14: Coherent collaboration story (despite sync issues)
