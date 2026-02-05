@@ -305,8 +305,24 @@
       ],
       "created_at": "2026-02-05T12:15:49.588519-05:00",
       "updated_at": "2026-02-05T12:16:27.938303-05:00"
+    },
+    {
+      "id": 22,
+      "title": "Global vs per-project semantics are well-understood and cascade correctly",
+      "hypothesis": "cprr has clear precedence rules: pwd .cprr/ \u003e ~/.cprr, documented in doctor output, init help, and README",
+      "evidence": [
+        "Precedence: (1) .cprr/conjectures.json in pwd checked first, (2) ~/.cprr/conjectures.json fallback. Doctor shows which is ACTIVE. No merge/cascade of data - winner takes all.",
+        "Semantics documented: init --help shows local default, doctor explains stores, loadStore() line 144-146 implements detection. No config inheritance - each store is independent."
+      ],
+      "status": "confirmed",
+      "tags": [
+        "documentation",
+        "semantics"
+      ],
+      "created_at": "2026-02-05T12:17:42.101746-05:00",
+      "updated_at": "2026-02-05T12:18:17.672378-05:00"
     }
   ],
-  "next_id": 22,
+  "next_id": 23,
   "config": {}
 }
