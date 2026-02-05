@@ -64,6 +64,16 @@ check_optional "emacs" "org-mode tangle/detangle"
 check_optional "direnv" "environment management"
 check_optional "tmux" "terminal multiplexing"
 check_optional "asciinema" "terminal screencasts"
+check_optional "bd" "beads issue tracking"
+
+echo ""
+echo "Optional (formal methods):"
+check_optional "java" "TLA+ toolbox runtime"
+check_optional "tlc" "TLA+ model checker"
+check_optional "z3" "SMT solver"
+check_optional "alloy" "Alloy analyzer"
+check_optional "spin" "PROMELA model checker"
+check_optional "coq" "Coq proof assistant"
 
 echo ""
 
