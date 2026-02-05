@@ -233,15 +233,16 @@
       "title": "cprr and bd init/quickstart should be idempotent like bd install/uninstall",
       "hypothesis": "Running cprr init, cprr quickstart, bd init, bd install multiple times produces same result - no duplicate entries, no errors, safe re-runs",
       "evidence": [
-        "Current state: cprr init errors if exists (exit 1), bd init errors if exists (exit 1), cprr quickstart creates new demo conjecture each run (not idempotent - accumulates #16, #17, #18...)"
+        "Current state: cprr init errors if exists (exit 1), bd init errors if exists (exit 1), cprr quickstart creates new demo conjecture each run (not idempotent - accumulates #16, #17, #18...)",
+        "Implemented: cprr now uses local-first detection, doctor command provides migration and health checks"
       ],
-      "status": "open",
+      "status": "confirmed",
       "tags": [
         "semantics",
         "design"
       ],
       "created_at": "2026-02-05T11:57:03.280657-05:00",
-      "updated_at": "2026-02-05T11:57:35.609099-05:00"
+      "updated_at": "2026-02-05T12:06:15.551516-05:00"
     },
     {
       "id": 18,

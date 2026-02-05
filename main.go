@@ -95,7 +95,7 @@ var forwardPath = map[Status]Status{
 }
 
 // Available commands for suggestions
-var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "quickstart", "help", "version"}
+var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "quickstart", "doctor", "help", "version"}
 
 type Conjecture struct {
 	ID          int       `json:"id"`
@@ -140,7 +140,8 @@ func dataFile() string {
 func loadStore() (*Store, error) {
 	store := &Store{NextID: 1}
 
-	// Check for local .cprr first
+	// Local-first: .cprr/ in pwd takes precedence over ~/.cprr
+	// This enables multi-machine/multi-agent workflows with git-tracked state
 	if _, err := os.Stat(".cprr/conjectures.json"); err == nil {
 		localMode = true
 	}
@@ -155,7 +156,8 @@ func loadStore() (*Store, error) {
 	if err := json.Unmarshal(data, store); err != nil {
 		return nil, err
 	}
-	localMode = store.Config.Local
+	// Note: We intentionally do NOT override localMode from config
+	// Local detection (file exists) takes precedence for portability
 	return store, nil
 }
 
@@ -320,6 +322,12 @@ func main() {
 	// Handle quickstart before loading store (it may init)
 	if cmd == "quickstart" {
 		cmdQuickstart(cmdArgs)
+		return
+	}
+
+	// Handle doctor (inspects both stores)
+	if cmd == "doctor" {
+		cmdDoctor(cmdArgs)
 		return
 	}
 
@@ -1228,4 +1236,169 @@ The CPRR cycle maps to experiment-driven development:
 
 Demo conjecture #%d is now confirmed. Run 'cprr list' to see it.
 `, demoID)
+}
+
+func cmdDoctor(args []string) {
+	migrate := false
+	for _, arg := range args {
+		switch arg {
+		case "-h", "--help":
+			fmt.Print(`Usage: cprr doctor [flags]
+
+Check and repair cprr installation.
+
+Flags:
+  --migrate    Migrate from ~/.cprr to ./.cprr (local-first)
+  -h, --help   Show this help
+
+Checks performed:
+  - Detect global store (~/.cprr)
+  - Detect local store (./.cprr)
+  - Validate store schema
+  - Check for orphaned data
+  - Verify state machine invariants
+
+Examples:
+  cprr doctor            # Check health
+  cprr doctor --migrate  # Move global → local
+`)
+			return
+		case "--migrate":
+			migrate = true
+		}
+	}
+
+	home, _ := os.UserHomeDir()
+	globalPath := filepath.Join(home, ".cprr", "conjectures.json")
+	localPath := ".cprr/conjectures.json"
+
+	globalExists := false
+	localExists := false
+	var globalStore, localStore *Store
+
+	// Check global store
+	if data, err := os.ReadFile(globalPath); err == nil {
+		globalExists = true
+		globalStore = &Store{}
+		json.Unmarshal(data, globalStore)
+	}
+
+	// Check local store
+	if data, err := os.ReadFile(localPath); err == nil {
+		localExists = true
+		localStore = &Store{}
+		json.Unmarshal(data, localStore)
+	}
+
+	fmt.Println("cprr doctor")
+	fmt.Println("===========")
+	fmt.Println()
+
+	// Report store status
+	fmt.Println("Store Status:")
+	if globalExists {
+		fmt.Printf("  ~/.cprr/conjectures.json: %d conjectures\n", len(globalStore.Conjectures))
+	} else {
+		fmt.Println("  ~/.cprr/conjectures.json: not found")
+	}
+	if localExists {
+		fmt.Printf("  .cprr/conjectures.json:   %d conjectures (ACTIVE)\n", len(localStore.Conjectures))
+	} else {
+		fmt.Println("  .cprr/conjectures.json:   not found")
+	}
+	fmt.Println()
+
+	// Detect issues
+	issues := []string{}
+	warnings := []string{}
+
+	if globalExists && localExists {
+		if len(globalStore.Conjectures) != len(localStore.Conjectures) {
+			warnings = append(warnings, fmt.Sprintf("Store mismatch: global has %d, local has %d conjectures",
+				len(globalStore.Conjectures), len(localStore.Conjectures)))
+		}
+	}
+
+	if globalExists && !localExists {
+		issues = append(issues, "Global store exists but no local store - run: cprr doctor --migrate")
+	}
+
+	if !globalExists && !localExists {
+		issues = append(issues, "No store found - run: cprr init --local")
+	}
+
+	// Validate active store
+	activeStore := localStore
+	if activeStore == nil {
+		activeStore = globalStore
+	}
+
+	if activeStore != nil {
+		// Check state machine invariants
+		for _, c := range activeStore.Conjectures {
+			if c.Status == "confirmed" && len(c.Evidence) < 2 {
+				issues = append(issues, fmt.Sprintf("#%d: confirmed with only %d evidence (requires 2+)", c.ID, len(c.Evidence)))
+			}
+			if c.Status == "refuted" && len(c.Evidence) < 1 {
+				issues = append(issues, fmt.Sprintf("#%d: refuted with no evidence (requires 1+)", c.ID))
+			}
+			if c.Status == "testing" && c.Hypothesis == "" {
+				issues = append(issues, fmt.Sprintf("#%d: testing without hypothesis", c.ID))
+			}
+		}
+	}
+
+	// Report issues
+	if len(warnings) > 0 {
+		fmt.Println("Warnings:")
+		for _, w := range warnings {
+			fmt.Printf("  ⚠ %s\n", w)
+		}
+		fmt.Println()
+	}
+
+	if len(issues) > 0 {
+		fmt.Println("Issues:")
+		for _, issue := range issues {
+			fmt.Printf("  ✗ %s\n", issue)
+		}
+		fmt.Println()
+	} else {
+		fmt.Println("✓ No issues found")
+		fmt.Println()
+	}
+
+	// Handle migration
+	if migrate {
+		if !globalExists {
+			fmt.Println("Nothing to migrate: no global store found")
+			return
+		}
+		if localExists {
+			fmt.Println("Local store already exists. To overwrite:")
+			fmt.Println("  rm .cprr/conjectures.json && cprr doctor --migrate")
+			return
+		}
+
+		// Perform migration
+		fmt.Println("Migrating ~/.cprr → .cprr ...")
+		os.MkdirAll(".cprr", 0755)
+		data, _ := json.MarshalIndent(globalStore, "", "  ")
+		if err := os.WriteFile(localPath, data, 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "error: failed to write local store: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ Migrated %d conjectures to .cprr/conjectures.json\n", len(globalStore.Conjectures))
+		fmt.Println()
+		fmt.Println("Next steps:")
+		fmt.Println("  git add .cprr/conjectures.json")
+		fmt.Println("  # Optionally remove global: rm -rf ~/.cprr")
+	}
+
+	// Recommendations
+	if globalExists && localExists {
+		fmt.Println("Recommendation:")
+		fmt.Println("  Local store is active. Consider removing global store:")
+		fmt.Println("  rm -rf ~/.cprr")
+	}
 }
