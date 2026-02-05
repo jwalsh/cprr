@@ -95,7 +95,7 @@ var forwardPath = map[Status]Status{
 }
 
 // Available commands for suggestions
-var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "help", "version"}
+var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "quickstart", "help", "version"}
 
 type Conjecture struct {
 	ID          int       `json:"id"`
@@ -314,6 +314,12 @@ func main() {
 	// Handle init before loading store
 	if cmd == "init" {
 		cmdInit(cmdArgs)
+		return
+	}
+
+	// Handle quickstart before loading store (it may init)
+	if cmd == "quickstart" {
+		cmdQuickstart(cmdArgs)
 		return
 	}
 
@@ -1086,4 +1092,140 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func cmdQuickstart(args []string) {
+	var showHelp bool
+
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" {
+			showHelp = true
+		}
+	}
+
+	if showHelp {
+		fmt.Print(`Usage: cprr quickstart
+
+Interactive walkthrough of the CPRR workflow for agents and humans.
+
+This command:
+  1. Shows the state machine and guard requirements
+  2. Demonstrates a complete conjecture lifecycle
+  3. Provides copy-paste examples
+
+Flags:
+  -h, --help    Show this help
+
+No arguments required. Safe to run multiple times.
+`)
+		return
+	}
+
+	fmt.Println(`CPRR Quickstart
+===============
+
+## State Machine
+
+  open ──[hypothesis]──> testing ──[2+ evidence]──> confirmed
+                              │
+                              └──[1+ evidence]──> refuted
+
+  Any state ──> abandoned (escape hatch)
+
+## Guards (Preconditions)
+
+  open → testing:     Requires hypothesis
+  testing → confirmed: Requires 2+ pieces of evidence
+  testing → refuted:   Requires 1+ piece of evidence
+
+## Workflow Demo`)
+
+	// Check if store exists, init if not
+	localMode = true // Use local store for demo
+	store, err := loadStore()
+	if err != nil || len(store.Conjectures) == 0 {
+		fmt.Println("\n  [Creating demo store...]")
+		store = &Store{
+			NextID: 1,
+			Config: Config{Local: true},
+		}
+	}
+
+	// Create a demo conjecture
+	demoID := store.NextID
+	demo := Conjecture{
+		ID:         demoID,
+		Title:      "Quickstart demo conjecture",
+		Hypothesis: "This demo will complete in <5 seconds",
+		Status:     StatusOpen,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+	store.Conjectures = append(store.Conjectures, demo)
+	store.NextID++
+	store.save()
+
+	fmt.Printf(`
+  Created: #%d "Quickstart demo conjecture"
+  Status:  open
+
+  # Advance to testing (hypothesis already set)
+  $ cprr next %d
+`, demoID, demoID)
+
+	// Advance to testing
+	c := findByID(store, demoID)
+	c.Status = StatusTesting
+	c.UpdatedAt = time.Now()
+	store.save()
+
+	fmt.Printf(`  Status:  testing
+
+  # Add evidence (need 2 for confirmation)
+  $ cprr evidence %d "First observation"
+  $ cprr evidence %d "Second observation"
+`, demoID, demoID)
+
+	// Add evidence
+	c.Evidence = append(c.Evidence, "Demo evidence 1: command executed")
+	c.Evidence = append(c.Evidence, "Demo evidence 2: output rendered")
+	c.UpdatedAt = time.Now()
+	store.save()
+
+	fmt.Printf(`  Evidence: 2 pieces added
+
+  # Advance to confirmed
+  $ cprr next %d
+`, demoID)
+
+	// Confirm
+	c.Status = StatusConfirmed
+	c.UpdatedAt = time.Now()
+	store.save()
+
+	fmt.Printf(`  Status:  confirmed
+
+## Quick Reference
+
+  cprr init --local         # Initialize project store
+  cprr add "Title" --hypothesis "H"  # Create conjecture
+  cprr list                 # List all
+  cprr show <id>            # Details + state machine
+  cprr evidence <id> "text" # Add evidence
+  cprr next <id>            # Advance (guards enforced)
+  cprr status <id> refuted  # Direct status (bypasses guards)
+
+## For Agents
+
+The CPRR cycle maps to experiment-driven development:
+
+  Phase        | Status    | Artifact
+  -------------|-----------|------------------
+  Conjecture   | open      | CONJECTURE.md
+  Proof        | testing   | Implementation + tests
+  Refutation   | testing   | Adversarial tests
+  Refinement   | confirmed | Code in src/, ADR
+
+Demo conjecture #%d is now confirmed. Run 'cprr list' to see it.
+`, demoID)
 }
