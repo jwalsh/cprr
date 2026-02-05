@@ -1,0 +1,44 @@
+# Binaries
+cprr
+cprr-*
+*.exe
+
+# Build artifacts
+dist/
+bin/
+
+# Local data store
+.cprr/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+*.elc
+.dir-locals.el
+.projectile
+TAGS
+.cask/
+auto-save-list/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+coverage.out
+coverage.html
+*.test
+
+# Dependencies (if vendored)
+vendor/
+
+# Debug
+__debug_bin*
