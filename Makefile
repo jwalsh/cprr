@@ -11,7 +11,7 @@ LDFLAGS := -ldflags "-s -w \
 	-X main.BuildDate=$(BUILD_DATE)"
 
 GO_FILES := $(shell find . -name '*.go' -type f)
-ORG_FILES := $(shell find . -name '*.org' -type f)
+ORG_FILES := $(wildcard *.org docs/*.org)
 SHELL_FILES := $(shell find . -name '*.sh' -type f)
 
 all: lint build test
@@ -20,24 +20,32 @@ all: lint build test
 build: $(BINARY)
 
 $(BINARY): $(GO_FILES)
-	go build $(LDFLAGS) -o $(BINARY) .
+	go build $(LDFLAGS) -o $@ .
 
-build-dev:
+build-dev: $(GO_FILES)
 	go build -o $(BINARY) .
 
-build-release:
+build-release: $(GO_FILES)
 	go build $(LDFLAGS) -o $(BINARY) .
 
-# Cross-compilation
-build-all:
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY)-linux-amd64 .
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY)-linux-arm64 .
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY)-darwin-amd64 .
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY)-darwin-arm64 .
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY)-windows-amd64.exe .
+# Cross-compilation targets
+PLATFORMS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd64
+
+define build-platform
+$(BINARY)-$(1): $(GO_FILES)
+	GOOS=$(word 1,$(subst -, ,$(1))) GOARCH=$(word 2,$(subst -, ,$(1))) \
+		go build $(LDFLAGS) -o $$@ .
+endef
+
+$(foreach p,$(PLATFORMS),$(eval $(call build-platform,$(p))))
+
+$(BINARY)-windows-amd64.exe: $(GO_FILES)
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $@ .
+
+build-all: $(addprefix $(BINARY)-,$(PLATFORMS)) $(BINARY)-windows-amd64.exe
 
 # Install
-install:
+install: $(GO_FILES)
 	go install $(LDFLAGS) .
 
 # Run (development)
@@ -54,19 +62,19 @@ test-cover:
 test-race:
 	go test -race ./...
 
-# Integration test (manual testing flow)
-test-integration: build
+# Integration test
+test-integration: $(BINARY)
 	@echo "==> Integration test"
 	rm -rf .cprr
-	./$(BINARY) --version
-	./$(BINARY) init --local --examples
-	./$(BINARY) list
-	./$(BINARY) show 1
-	./$(BINARY) next 1
-	./$(BINARY) evidence 1 "Test evidence 1"
-	./$(BINARY) evidence 1 "Test evidence 2"
-	./$(BINARY) next 1
-	./$(BINARY) list --status confirmed
+	./$< --version
+	./$< init --local --examples
+	./$< list
+	./$< show 1
+	./$< next 1
+	./$< evidence 1 "Test evidence 1"
+	./$< evidence 1 "Test evidence 2"
+	./$< next 1
+	./$< list --status confirmed
 	rm -rf .cprr
 	@echo "==> Integration test passed"
 
@@ -131,9 +139,9 @@ fmt:
 
 # Environment setup
 .env: .env.example
-	cp .env.example .env
-	@echo "Created .env from .env.example"
-	@echo "Edit .env to customize, then run: direnv allow"
+	cp $< $@
+	@echo "Created $@ from $<"
+	@echo "Edit $@ to customize, then run: direnv allow"
 
 # Clean
 clean:
@@ -154,19 +162,17 @@ dev-deps:
 check: lint-go test
 	@echo "==> Quick check passed"
 
-# Show version info that will be embedded
+# Show version info
 version-info:
 	@echo "VERSION:    $(VERSION)"
 	@echo "COMMIT:     $(COMMIT)"
 	@echo "BUILD_DATE: $(BUILD_DATE)"
 
 # Org-mode tangle/detangle
-TANGLE_FILES := $(wildcard *.org docs/*.org)
-
 tangle:
 	@echo "==> Tangling org files"
 	@if command -v emacs >/dev/null 2>&1; then \
-		for f in $(TANGLE_FILES); do \
+		for f in $(ORG_FILES); do \
 			echo "  Tangling: $$f"; \
 			emacs --batch -l org "$$f" \
 				--eval "(org-babel-tangle)" \
@@ -179,7 +185,7 @@ tangle:
 detangle:
 	@echo "==> Detangling to org files"
 	@if command -v emacs >/dev/null 2>&1; then \
-		for f in $(TANGLE_FILES); do \
+		for f in $(ORG_FILES); do \
 			echo "  Detangling: $$f"; \
 			emacs --batch -l org "$$f" \
 				--eval "(org-babel-detangle)" \
@@ -219,7 +225,32 @@ help:
 	@echo "  make dev-deps         Install linter tools"
 	@echo "  make check            Quick lint + test"
 	@echo "  make version-info     Show embedded version info"
+	@echo "  make .env             Create .env from .env.example"
 	@echo ""
 	@echo "Org-mode:"
 	@echo "  make tangle           Extract code from org files"
 	@echo "  make detangle         Sync code changes back to org files"
+	@echo ""
+	@echo "Scripts (fallthrough):"
+	@echo "  make <name>           Run ./scripts/<name>.sh if it exists"
+
+# Directory creation pattern
+%/:
+	install -d $@
+
+# Dist directory for releases
+dist/:
+	install -d $@
+
+dist/$(BINARY)-%: $(GO_FILES) | dist/
+	GOOS=$(word 1,$(subst -, ,$*)) GOARCH=$(word 2,$(subst -, ,$*)) \
+		go build $(LDFLAGS) -o $@ .
+
+# Fallthrough: run scripts from ./scripts/
+%:
+	@if [ -x ./scripts/$@.sh ]; then \
+		./scripts/$@.sh; \
+	else \
+		echo "No rule to make target '$@'" >&2; \
+		exit 1; \
+	fi
