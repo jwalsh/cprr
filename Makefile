@@ -238,10 +238,6 @@ help:
 %/:
 	install -d $@
 
-# Dist directory for releases
-dist/:
-	install -d $@
-
 dist/$(BINARY)-%: $(GO_FILES) | dist/
 	GOOS=$(word 1,$(subst -, ,$*)) GOARCH=$(word 2,$(subst -, ,$*)) \
 		go build $(LDFLAGS) -o $@ .
