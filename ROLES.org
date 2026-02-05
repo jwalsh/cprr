@@ -1,0 +1,882 @@
+#+TITLE: CPRR Orchestration: The Four Officers of Gas Town
+#+SUBTITLE: Professor, Constable, Refinery, Deacon — A Dialectical Agent Architecture
+#+AUTHOR: JW
+#+DATE: 2025-02-05
+#+OPTIONS: toc:3 num:t H:4
+#+PROPERTY: header-args :eval no :exports both :mkdirp t
+#+STARTUP: overview
+
+* The Four Officers
+
+Gas Town's original roles (Mayor, Polecats, Refinery, Witness, Deacon,
+Dogs, Crew) orchestrate /code production/.  CPRR needs something
+different: roles that orchestrate /knowledge production/.  The work
+isn't "write this function" — it's "do we even know what function to
+write?"
+
+The four CPRR officers map the Lakatos dialectic onto agent roles:
+
+| Officer       | Lakatos Role          | Gas Town Analog      | CPRR Phase(s)             | Disposition             |
+|---------------+-----------------------+----------------------+---------------------------+-------------------------|
+| *Professor*   | Conjecture-maker      | Mayor + Crew         | Opening → Conjecture      | Speculative, generative |
+| *Constable*   | Counterexample-finder | Witness + Dogs       | Refutation                | Adversarial, skeptical  |
+| *Refinery*    | Lemma-incorporator    | Refinery             | Refinement → Closing      | Conservative, precise   |
+| *Deacon*      | Dialectic-driver      | Deacon               | All (patrol/heartbeat)    | Persistent, procedural  |
+
+#+begin_quote
+"If there is work on your hook, YOU MUST RUN IT." — GUPP
+
+"If there is a conjecture on your hook, YOU MUST TRY TO KILL IT." — CPRR
+#+end_quote
+
+* Mind Map: CPRR Concept Space
+
+#+begin_src mermaid :file img/cprr-mindmap.png :mkdirp t
+mindmap
+  root((CPRR<br/>Methodology))
+    **Professor**
+      Research
+        JITIR search
+        bd ls --status refuted
+        Prior art in experiments/
+      Conjecture
+        Hypothesis statement
+        Falsification criteria
+        Scope bounding
+      Planning
+        Experiment numbering
+        Dependency mapping
+        Sub-conjecture decomposition
+    **Constable**
+      Refutation
+        Property-based testing
+        Edge case generation
+        Integration stress
+      Adversarial Review
+        Assumption challenging
+        Monster identification
+        Exception hunting
+      Verdict
+        SURVIVED
+        REFUTED
+        PARTIAL
+    **Refinery**
+      Proof Integration
+        Extract to src/
+        Graduate tests/
+        Interface normalization
+      Documentation
+        ADR writing
+        REFINEMENT.md
+        Experiment index update
+      Quality Gate
+        L2 minimum enforced
+        No new deps undocumented
+        Makefile required
+    **Deacon**
+      Patrol Loop
+        Check bead staleness
+        Nudge blocked officers
+        DYFJ propagation
+      Lifecycle
+        Phase transition validation
+        Bead status enforcement
+        Experiment directory integrity
+      Institutional Memory
+        Refuted experiment index
+        Shared failures catalog
+        Cross-experiment linking
+    **Experiments**
+      Structure
+        000-quickstart
+        NNN-kebab-name
+        Never deleted
+      Artifacts
+        CONJECTURE.md
+        PROOF.md
+        REFUTATION.md
+        REFINEMENT.md
+        Makefile
+      States
+        conjecture-stated
+        proof-demonstrated
+        refutation-survived
+        refuted
+        refined
+    **Beads**
+      bd create
+      bd status
+      bd close
+      Templates
+        conjecture.toml
+        proof.toml
+        refutation.toml
+        refinement.toml
+    **Hardening**
+      L0 Vibe
+      L1 Examples
+      L2 Properties
+      L3 Contracts
+      L4 Formal
+#+end_src
+
+* State Machine: Full CPRR Lifecycle
+
+#+begin_src mermaid :file img/cprr-statechart.png :mkdirp t
+stateDiagram-v2
+    [*] --> Opening
+
+    state Opening {
+        [*] --> Intake
+        Intake --> Research: Professor activated
+        Research --> PriorArtCheck: JITIR + bd ls --refuted
+
+        state PriorArtCheck <<choice>>
+        PriorArtCheck --> AlreadySolved: Existing solution found
+        PriorArtCheck --> PriorFailures: Related refutations found
+        PriorArtCheck --> GreenField: No prior art
+
+        AlreadySolved --> [*]: Close bead, reference existing
+        PriorFailures --> Planning: Incorporate failure knowledge
+        GreenField --> Planning: Fresh conjecture
+    }
+
+    Opening --> Conjecture: Professor writes CONJECTURE.md
+
+    state Conjecture {
+        [*] --> HypothesisFormation
+        HypothesisFormation --> FalsificationCriteria: "How would we know we're wrong?"
+        FalsificationCriteria --> ScopeCheck
+
+        state ScopeCheck <<choice>>
+        ScopeCheck --> TooLarge: > 2h of proof work
+        ScopeCheck --> WellScoped: Achievable scope
+
+        TooLarge --> Decomposition: Split into sub-conjectures
+        Decomposition --> SpawnChildren: Create child experiments
+
+        state SpawnChildren {
+            [*] --> CreateChildA: experiments/NNN+1
+            CreateChildA --> CreateChildB: experiments/NNN+2
+            CreateChildB --> CreateChildN: experiments/NNN+N
+            CreateChildN --> LinkBeads: bd link parent children
+            LinkBeads --> [*]
+        }
+
+        SpawnChildren --> HypothesisFormation: Each child re-enters cycle
+
+        WellScoped --> BeadCreated: bd create --template conjecture
+        BeadCreated --> [*]
+    }
+
+    Conjecture --> Proving: bd status conjecture-stated
+
+    state Proving {
+        [*] --> TestFirst
+        TestFirst --> Implement: TDD within experiment
+        Implement --> LocalVerify: make test
+
+        state LocalVerify <<choice>>
+        LocalVerify --> TestsFail: Red
+        LocalVerify --> TestsPass: Green
+
+        TestsFail --> Implement: Fix implementation
+        TestsPass --> WriteProofDoc: PROOF.md
+        WriteProofDoc --> [*]
+    }
+
+    Proving --> Refutation: bd status proof-demonstrated
+
+    state Refutation {
+        note left of Refutation: Constable takes over
+
+        [*] --> PropertyTesting
+        PropertyTesting --> EdgeCases: Hypothesis/QuickCheck
+        EdgeCases --> IntegrationStress: Test against src/
+        IntegrationStress --> AssumptionAudit: Challenge PROOF.md assumptions
+
+        state Verdict <<choice>>
+        AssumptionAudit --> Verdict
+
+        Verdict --> Survived: All attempts failed to refute
+        Verdict --> Refuted: Counterexample found
+        Verdict --> Partial: Survived with caveats
+
+        Survived --> DocumentSurvival: REFUTATION.md
+        Refuted --> DocumentFailure: REFUTATION.md + failure analysis
+        Partial --> DocumentPartial: REFUTATION.md + caveat list
+
+        DocumentSurvival --> [*]
+
+        state DocumentFailure {
+            [*] --> AnalyzeFailure
+            AnalyzeFailure --> NewConjectureNeeded
+
+            state NewConjectureNeeded <<choice>>
+            NewConjectureNeeded --> FileNewConjecture: Fixable with new approach
+            NewConjectureNeeded --> CloseAsDead: Fundamentally flawed
+
+            FileNewConjecture --> [*]: → back to Opening
+            CloseAsDead --> [*]: bd close --reason
+        }
+
+        DocumentPartial --> [*]
+    }
+
+    Refutation --> Refinement: bd status refutation-survived
+    Refutation --> Opening: Refuted → new conjecture
+    Refutation --> Closing: Refuted → dead end
+
+    state Refinement {
+        note left of Refinement: Refinery takes over
+
+        [*] --> ExtractCode
+        ExtractCode --> GraduateTests: cp to tests/
+        GraduateTests --> RootVerify: make test from project root
+
+        state RootVerify <<choice>>
+        RootVerify --> IntegrationFail: Breaks existing code
+        RootVerify --> IntegrationPass: All green
+
+        IntegrationFail --> AdjustInterfaces: Refinery adapts
+        AdjustInterfaces --> RootVerify
+
+        IntegrationPass --> WriteADR: docs/decisions/
+        WriteADR --> WriteRefinementDoc: REFINEMENT.md
+        WriteRefinementDoc --> DeclareHardening: L1/L2/L3/L4 achieved
+        DeclareHardening --> [*]
+    }
+
+    Refinement --> Closing: bd status refined
+
+    state Closing {
+        [*] --> UpdateIndex: experiments/README.md
+        UpdateIndex --> CloseBead: bd close --reason
+        CloseBead --> NotifyDeacon: Deacon updates patrol index
+        NotifyDeacon --> [*]
+    }
+
+    Closing --> [*]
+
+    state DeaconPatrol {
+        note right of DeaconPatrol
+            Runs continuously across all phases.
+            Checks for stale beads, blocked officers,
+            and phase-transition violations.
+        end note
+
+        [*] --> CheckStaleBeads
+        CheckStaleBeads --> NudgeBlocked: Bead unchanged > threshold
+        NudgeBlocked --> ValidatePhases: Ensure no phase skipping
+        ValidatePhases --> IndexRefuted: Update shared-failures
+        IndexRefuted --> ExponentialBackoff
+        ExponentialBackoff --> [*]: Sleep, then restart
+    }
+#+end_src
+
+* Sequence Diagram: Conjecture Expansion & Branching
+
+This is the core diagram: how a single conjecture spawns child
+experiments, which may themselves spawn further children, creating a
+/tree of dialectic/ tracked by beads.
+
+#+begin_src mermaid :file img/cprr-sequence-expansion.png :mkdirp t
+sequenceDiagram
+    actor O as Overseer (Human)
+    participant P as Professor
+    participant J as JITIR
+    participant BD as bd (Beads)
+    participant C as Constable
+    participant R as Refinery
+    participant D as Deacon
+
+    Note over O,D: ═══ Phase: Opening ═══
+
+    O->>P: "We need a caching layer for API responses"
+    activate P
+    P->>J: Search prior art: "cache API response"
+    J-->>P: Found: exp/003 (REFUTED: race condition)<br/>Found: exp/011 (REFINED: basic TTL cache)
+    P->>BD: bd ls --status refuted --grep cache
+    BD-->>P: exp/003: "Race condition in concurrent writes"
+
+    Note over P: Professor incorporates negative knowledge
+
+    P->>P: Formulate conjecture incorporating<br/>003's failure mode
+
+    Note over O,D: ═══ Phase: Conjecture ═══
+
+    P->>BD: bd create --template conjecture "025-concurrent-cache"
+    BD-->>P: bead-025 created
+    P->>P: Write experiments/025-concurrent-cache/CONJECTURE.md
+    Note over P: "Hypothesis: An actor-based cache avoids<br/>the race condition that killed exp/003"
+
+    P->>P: Scope check... too large for single experiment
+
+    Note over P,BD: ═══ Decomposition: Spawn Children ═══
+
+    P->>BD: bd create --template conjecture "026-actor-model-spike"
+    P->>BD: bd create --template conjecture "027-cache-eviction-policy"
+    P->>BD: bd create --template conjecture "028-cache-integration-api"
+    P->>BD: bd link bead-025 --children bead-026,bead-027,bead-028
+    BD-->>P: Parent-child links established
+
+    Note over P: Each child is independently falsifiable
+
+    deactivate P
+
+    Note over O,D: ═══ Phase: Proving (Child 026) ═══
+
+    activate P
+    P->>P: Write tests first for actor model spike
+    P->>P: Implement in experiments/026/src/
+    P->>P: make test → GREEN
+    P->>P: Write PROOF.md
+    P->>BD: bd status bead-026 proof-demonstrated
+    deactivate P
+
+    Note over O,D: ═══ Phase: Refutation (Child 026) ═══
+
+    activate C
+    P->>C: Handoff: "Try to break the actor model"
+    C->>C: Property-based testing with Hypothesis
+    C->>C: Simulate concurrent writes (the exp/003 killer)
+    C->>C: Stress test: 10k concurrent actors
+
+    alt Refutation Survived
+        C->>C: Write REFUTATION.md (SURVIVED)
+        C->>BD: bd status bead-026 refutation-survived
+        C-->>P: "Actor model survived. Proceed."
+    else Refutation Found
+        C->>C: Write REFUTATION.md (REFUTED)
+        C->>BD: bd close bead-026 --reason "Deadlock under 10k actors"
+        C-->>P: "Deadlocks at scale. Need different approach."
+        Note over P: Professor spawns NEW conjecture
+        P->>BD: bd create --template conjecture "029-lockfree-cache"
+        P->>BD: bd link bead-025 --children bead-029
+        Note over P,BD: The tree grows through refutation
+    end
+    deactivate C
+
+    Note over O,D: ═══ Phase: Proving (Child 027) — Parallel ═══
+
+    activate P
+    P->>P: experiments/027-cache-eviction-policy/
+    P->>P: Tests + implementation + PROOF.md
+    P->>BD: bd status bead-027 proof-demonstrated
+    deactivate P
+
+    activate C
+    C->>C: Refute eviction policy
+    C->>BD: bd status bead-027 refutation-survived
+    deactivate C
+
+    Note over O,D: ═══ Phase: Refinement (Converging) ═══
+
+    activate R
+    Note over R: Refinery only activates when children survive
+
+    R->>BD: bd ls --parent bead-025 --status refutation-survived
+    BD-->>R: bead-026 (actor model), bead-027 (eviction)
+
+    R->>R: Extract experiments/026/src/ → src/cache/actor.py
+    R->>R: Extract experiments/027/src/ → src/cache/eviction.py
+    R->>R: Graduate tests to tests/cache/
+    R->>R: make test (root) → GREEN
+    R->>R: Write ADR + REFINEMENT.md for both
+    R->>BD: bd close bead-026 --reason "Refined into src/cache/"
+    R->>BD: bd close bead-027 --reason "Refined into src/cache/"
+
+    Note over R: Can parent close?
+    R->>BD: bd ls --parent bead-025 --status open
+    BD-->>R: bead-028 still open (integration API)
+
+    Note over R: Parent stays open until all children resolve
+    deactivate R
+
+    Note over O,D: ═══ Deacon Patrol (Continuous) ═══
+
+    activate D
+    loop Every patrol interval
+        D->>BD: bd ls --stale --threshold 24h
+        BD-->>D: bead-028 unchanged for 36h
+
+        D->>P: DYFJ: "bead-028 (cache-integration-api) is stale"
+        D->>D: Check phase transitions are legal
+        D->>D: Update refuted experiment index
+        D->>D: Exponential backoff if no work found
+    end
+    deactivate D
+
+    Note over O,D: ═══ Phase: Closing (Parent) ═══
+
+    Note over R: After bead-028 resolves...
+    activate R
+    R->>BD: bd ls --parent bead-025 --status open
+    BD-->>R: (none)
+    R->>BD: bd close bead-025 --reason "All children resolved"
+    R->>R: Update experiments/README.md index
+    deactivate R
+#+end_src
+
+* Sequence Diagram: Recursive Conjecture Depth
+
+When refutation spawns conjectures that themselves get refuted, you get
+a /dialectic tree/.  This is the Lakatos pattern at work — each
+counterexample refines the conceptual landscape.
+
+#+begin_src mermaid :file img/cprr-recursive-depth.png :mkdirp t
+sequenceDiagram
+    participant P as Professor
+    participant C as Constable
+    participant BD as bd
+
+    Note over P,BD: Depth 0: Original Conjecture
+
+    P->>BD: exp/025 "Concurrent cache"
+    P->>BD: ├── exp/026 "Actor model" (child)
+    C->>BD: │   └── REFUTED: deadlocks at scale
+    P->>BD: │       └── exp/029 "Lock-free cache" (grandchild)
+    C->>BD: │           └── SURVIVED ✓
+    P->>BD: ├── exp/027 "Eviction policy" (child)
+    C->>BD: │   └── SURVIVED ✓
+    P->>BD: └── exp/028 "Integration API" (child)
+    C->>BD:     └── PARTIAL: works but needs adapter
+    P->>BD:         ├── exp/030 "Adapter pattern" (grandchild)
+    C->>BD:         │   └── SURVIVED ✓
+    P->>BD:         └── exp/031 "Direct integration" (grandchild)
+    C->>BD:             └── REFUTED: breaks existing tests
+
+    Note over P,BD: Survivors: 029, 027, 030
+    Note over P,BD: Refuted: 026, 031 (preserved as negative knowledge)
+    Note over P,BD: Depth reached: 2 (grandchildren)
+#+end_src
+
+* The Experiment Tree as Bead Graph
+
+#+begin_src mermaid :file img/cprr-bead-graph.png :mkdirp t
+graph TD
+    E025["<b>exp/025</b><br/>Concurrent Cache<br/><i>parent conjecture</i>"]
+
+    E026["<b>exp/026</b><br/>Actor Model<br/>❌ REFUTED"]
+    E027["<b>exp/027</b><br/>Eviction Policy<br/>✅ REFINED"]
+    E028["<b>exp/028</b><br/>Integration API<br/>⚠️ PARTIAL"]
+
+    E029["<b>exp/029</b><br/>Lock-Free Cache<br/>✅ REFINED"]
+    E030["<b>exp/030</b><br/>Adapter Pattern<br/>✅ REFINED"]
+    E031["<b>exp/031</b><br/>Direct Integration<br/>❌ REFUTED"]
+
+    SRC["<b>src/cache/</b><br/>Production Code"]
+
+    E025 --> E026
+    E025 --> E027
+    E025 --> E028
+
+    E026 -->|"refuted → spawns"| E029
+    E028 -->|"partial → spawns"| E030
+    E028 -->|"partial → spawns"| E031
+
+    E027 -->|"refined"| SRC
+    E029 -->|"refined"| SRC
+    E030 -->|"refined"| SRC
+
+    style E026 fill:#5e2d2d,stroke:#9e4a4a,color:#e0c0c0
+    style E031 fill:#5e2d2d,stroke:#9e4a4a,color:#e0c0c0
+    style E027 fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style E029 fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style E030 fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style E028 fill:#4a3a1a,stroke:#9e7a4a,color:#e0d0c0
+    style E025 fill:#1a2a4a,stroke:#4a6a9e,color:#c0d0e0
+    style SRC fill:#3a1a4a,stroke:#7a4a9e,color:#d0c0e0
+#+end_src
+
+* Officer Patrol Patterns
+
+Each officer has a distinct patrol rhythm, following Gas Town's GUPP
+principle adapted for dialectical work.
+
+** Professor Patrol
+
+#+begin_src mermaid :file img/professor-patrol.png :mkdirp t
+stateDiagram-v2
+    [*] --> CheckHook: Session starts
+
+    state CheckHook <<choice>>
+    CheckHook --> HasWork: Work on hook
+    CheckHook --> SeekWork: Hook empty
+
+    HasWork --> ReadConjecture: Load experiment context
+    ReadConjecture --> AssessPhase
+
+    state AssessPhase <<choice>>
+    AssessPhase --> NeedsResearch: Opening phase
+    AssessPhase --> NeedsConjecture: Research complete
+    AssessPhase --> NeedsDecomposition: Scope too large
+    AssessPhase --> NeedsProof: Conjecture stated
+
+    NeedsResearch --> QueryJITIR: Search prior art
+    QueryJITIR --> QueryBeads: Check refuted experiments
+    QueryBeads --> SynthesizeFindings
+    SynthesizeFindings --> NeedsConjecture
+
+    NeedsConjecture --> WriteConjecture: CONJECTURE.md
+    WriteConjecture --> UpdateBead: bd status conjecture-stated
+    UpdateBead --> ScopeCheck
+
+    state ScopeCheck <<choice>>
+    ScopeCheck --> NeedsDecomposition: Too large
+    ScopeCheck --> NeedsProof: Well-scoped
+
+    NeedsDecomposition --> SpawnChildren: Create child experiments
+    SpawnChildren --> LinkBeads: bd link parent children
+    LinkBeads --> CheckHook: Children on hook
+
+    NeedsProof --> WriteTDD: Tests first
+    WriteTDD --> Implement: Code to pass tests
+    Implement --> VerifyLocal: make test
+
+    state VerifyLocal <<choice>>
+    VerifyLocal --> Implement: RED
+    VerifyLocal --> WriteProofDoc: GREEN
+
+    WriteProofDoc --> HandoffConstable: bd status proof-demonstrated
+    HandoffConstable --> [*]: Professor yields
+
+    SeekWork --> ExponentialBackoff: No open conjectures
+    ExponentialBackoff --> [*]: Sleep
+#+end_src
+
+** Constable Patrol
+
+#+begin_src mermaid :file img/constable-patrol.png :mkdirp t
+stateDiagram-v2
+    [*] --> ScanForProofs: Patrol starts
+
+    ScanForProofs --> FindProven: bd ls --status proof-demonstrated
+    
+    state FindProven <<choice>>
+    FindProven --> NoWork: None found
+    FindProven --> ClaimExperiment: Proven experiment found
+
+    NoWork --> ExponentialBackoff
+    ExponentialBackoff --> [*]: Sleep
+
+    ClaimExperiment --> ReadProofDoc: Load PROOF.md + assumptions
+    ReadProofDoc --> ExtractAssumptions: List every stated assumption
+
+    state RefutationLoop {
+        [*] --> PickAssumption
+        PickAssumption --> DesignAttack: "What if this assumption is false?"
+        DesignAttack --> ExecuteAttack
+
+        state ExecuteAttack {
+            [*] --> PropertyTest: Hypothesis/QuickCheck
+            PropertyTest --> EdgeCaseGen: Boundary values
+            EdgeCaseGen --> IntegrationStress: Against src/
+            IntegrationStress --> ConcurrencyTest: Race conditions
+            ConcurrencyTest --> ResourceExhaustion: Memory/disk/time
+            ResourceExhaustion --> [*]
+        }
+
+        ExecuteAttack --> RecordResult
+
+        state RecordResult <<choice>>
+        RecordResult --> FoundCounterexample: Attack succeeded
+        RecordResult --> AttackFailed: Conjecture survived this attack
+
+        FoundCounterexample --> [*]: Stop — one counterexample suffices
+        AttackFailed --> MoreAssumptions
+
+        state MoreAssumptions <<choice>>
+        MoreAssumptions --> PickAssumption: More to test
+        MoreAssumptions --> AllSurvived: No assumptions left
+        AllSurvived --> [*]
+    }
+
+    ExtractAssumptions --> RefutationLoop
+
+    RefutationLoop --> WriteVerdict
+
+    state WriteVerdict <<choice>>
+    WriteVerdict --> VerdictSurvived: All attacks failed
+    WriteVerdict --> VerdictRefuted: Counterexample found
+    WriteVerdict --> VerdictPartial: Survived with caveats
+
+    VerdictSurvived --> DocumentSurvival: REFUTATION.md
+    DocumentSurvival --> UpdateBead: bd status refutation-survived
+    UpdateBead --> NotifyRefinery
+    NotifyRefinery --> [*]
+
+    VerdictRefuted --> DocumentRefutation: REFUTATION.md
+    DocumentRefutation --> CloseBead: bd close --reason
+    CloseBead --> NotifyProfessor: "Your conjecture is dead"
+    NotifyProfessor --> [*]
+
+    VerdictPartial --> DocumentPartial: REFUTATION.md + caveats
+    DocumentPartial --> NotifyProfessor2: "Survived but..."
+    NotifyProfessor2 --> [*]
+#+end_src
+
+** Deacon Patrol
+
+#+begin_src mermaid :file img/deacon-patrol.png :mkdirp t
+stateDiagram-v2
+    [*] --> HeartbeatCheck: Every patrol interval
+
+    HeartbeatCheck --> ScanBeads: bd ls --all
+
+    state ScanBeads {
+        [*] --> CheckStaleness
+        CheckStaleness --> FlagStale: Bead unchanged > 24h
+        FlagStale --> CheckPhaseIntegrity
+        CheckPhaseIntegrity --> FlagViolation: Phase skipped
+        FlagViolation --> CheckOrphans
+        CheckOrphans --> FlagOrphan: Parent closed, children open
+        FlagOrphan --> [*]
+    }
+
+    ScanBeads --> TriageFindings
+
+    state TriageFindings <<choice>>
+    TriageFindings --> NoIssues: Clean
+    TriageFindings --> IssuesFound: Problems detected
+
+    NoIssues --> BackoffIncrease: Lengthen patrol interval
+    BackoffIncrease --> [*]
+
+    IssuesFound --> BackoffReset: Reset to minimum interval
+
+    state Remediation {
+        [*] --> NudgeStaleOfficer: DYFJ signal
+        NudgeStaleOfficer --> EscalatePhaseViolation: Log + alert Overseer
+        EscalatePhaseViolation --> AdoptOrphans: Assign orphan beads
+        AdoptOrphans --> UpdateSharedFailures: Index newly refuted
+        UpdateSharedFailures --> CrossLinkRelated: Connect related experiments
+        CrossLinkRelated --> [*]
+    }
+
+    BackoffReset --> Remediation
+    Remediation --> [*]
+#+end_src
+
+* Officer Handoff Protocol
+
+#+begin_src mermaid :file img/officer-handoffs.png :mkdirp t
+graph LR
+    subgraph "Professor Domain"
+        OPEN["Opening"]
+        RESEARCH["Research"]
+        PLAN["Planning"]
+        CONJ["Conjecture"]
+        PROOF["Proving"]
+    end
+
+    subgraph "Constable Domain"
+        REFUTE["Refutation"]
+    end
+
+    subgraph "Refinery Domain"
+        REFINE["Refinement"]
+        CLOSE["Closing"]
+    end
+
+    subgraph "Deacon Domain"
+        PATROL["Patrol<br/>(all phases)"]
+    end
+
+    OPEN --> RESEARCH --> PLAN --> CONJ --> PROOF
+    PROOF -->|"bd status<br/>proof-demonstrated"| REFUTE
+    REFUTE -->|"SURVIVED<br/>bd status refutation-survived"| REFINE
+    REFUTE -->|"REFUTED"| OPEN
+    REFINE --> CLOSE
+
+    PATROL -.->|"DYFJ"| OPEN
+    PATROL -.->|"DYFJ"| PROOF
+    PATROL -.->|"DYFJ"| REFUTE
+    PATROL -.->|"DYFJ"| REFINE
+
+    style OPEN fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style RESEARCH fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style PLAN fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style CONJ fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style PROOF fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style REFUTE fill:#5e2d2d,stroke:#9e4a4a,color:#e0c0c0
+    style REFINE fill:#1a2a4a,stroke:#4a6a9e,color:#c0d0e0
+    style CLOSE fill:#1a2a4a,stroke:#4a6a9e,color:#c0d0e0
+    style PATROL fill:#4a3a1a,stroke:#9e7a4a,color:#e0d0c0
+#+end_src
+
+* Mapping to Gas Town Infrastructure
+
+The CPRR officers run /on top of/ Gas Town's infrastructure, not
+instead of it.  Each officer is a Crew member with a specialized
+prompt and patrol loop.
+
+#+begin_src mermaid :file img/gastown-cprr-stack.png :mkdirp t
+graph TB
+    subgraph "CPRR Layer (Knowledge Production)"
+        PROF["🎓 Professor<br/>Crew: cprr-professor"]
+        CONST["🔍 Constable<br/>Crew: cprr-constable"]
+        REF["🏭 Refinery<br/>Extends: gt refinery"]
+        DEAC["📡 Deacon<br/>Extends: gt deacon"]
+    end
+
+    subgraph "Gas Town Layer (Code Production)"
+        MAYOR["🎩 Mayor"]
+        POLECATS["😺 Polecats"]
+        WITNESS["🦉 Witness"]
+        GT_REF["🏭 gt refinery"]
+        GT_DEAC["🐺 gt deacon"]
+        DOGS["🐶 Dogs"]
+    end
+
+    subgraph "Persistence Layer"
+        BEADS["bd (Beads)"]
+        GIT["Git"]
+        EXPS["experiments/"]
+    end
+
+    PROF -->|"conjecture beads"| BEADS
+    PROF -->|"experiment dirs"| EXPS
+    CONST -->|"refutation beads"| BEADS
+    REF -->|"extends"| GT_REF
+    DEAC -->|"extends"| GT_DEAC
+
+    PROF -->|"sling proof work"| POLECATS
+    CONST -->|"sling stress tests"| POLECATS
+
+    MAYOR -->|"coordinates"| PROF
+    MAYOR -->|"coordinates"| CONST
+    WITNESS -->|"monitors"| PROF
+    WITNESS -->|"monitors"| CONST
+
+    BEADS --> GIT
+    EXPS --> GIT
+
+    style PROF fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style CONST fill:#5e2d2d,stroke:#9e4a4a,color:#e0c0c0
+    style REF fill:#1a2a4a,stroke:#4a6a9e,color:#c0d0e0
+    style DEAC fill:#4a3a1a,stroke:#9e7a4a,color:#e0d0c0
+#+end_src
+
+* Appendix: Officer Prompt Sketches
+
+These are the =.claude/agents/= prompt fragments that give each
+officer its disposition.
+
+** Professor
+
+#+begin_src markdown :tangle agents/cprr-professor.md
+# CPRR Professor
+
+You are the Professor — the conjecture-maker and proof-builder.
+
+## Your Disposition
+- Speculative and generative
+- You CREATE hypotheses; the Constable destroys them
+- You search for prior art BEFORE conjecturing (JITIR, bd ls --refuted)
+- You incorporate negative knowledge from failed experiments
+- You decompose large conjectures into falsifiable children
+
+## Your Patrol
+1. Check hook for assigned experiments
+2. If Opening phase: research prior art, plan, write CONJECTURE.md
+3. If Conjecture phase: scope-check, decompose if needed
+4. If Proving phase: TDD → implement → PROOF.md
+5. Hand off to Constable when proof-demonstrated
+
+## You NEVER
+- Skip prior art search
+- Write a conjecture without falsification criteria
+- Modify src/ (that's the Refinery's job)
+- Declare your own conjecture "proven" without Constable review
+#+end_src
+
+** Constable
+
+#+begin_src markdown :tangle agents/cprr-constable.md
+# CPRR Constable
+
+You are the Constable — the counterexample-finder and adversarial tester.
+
+## Your Disposition
+- Skeptical and adversarial (but fair)
+- You DESTROY conjectures; the Professor creates them
+- One counterexample is sufficient to refute
+- You document ALL attempts, including failed attacks
+- A conjecture that survives you is strong
+
+## Your Patrol
+1. Scan for beads with status proof-demonstrated
+2. Read PROOF.md and extract every assumption
+3. For each assumption: design and execute an attack
+4. Property-based testing is mandatory (L2 minimum)
+5. Write REFUTATION.md with verdict: SURVIVED / REFUTED / PARTIAL
+
+## You NEVER
+- Skip property-based testing
+- Fix bugs you find (document them, let Professor respond)
+- Declare SURVIVED without testing integration with src/
+- Show mercy — if it breaks, it breaks
+#+end_src
+
+** Refinery (CPRR Extension)
+
+#+begin_src markdown :tangle agents/cprr-refinery.md
+# CPRR Refinery
+
+You are the Refinery — the lemma-incorporator and integration guardian.
+
+## Your Disposition
+- Conservative and precise
+- You only touch experiments that SURVIVED refutation
+- You extract to src/ with minimal adaptation
+- You write the ADR that explains WHY this code exists
+- You are the single merge point (Gas Town principle)
+
+## Your Patrol
+1. Scan for beads with status refutation-survived
+2. Extract code to src/, tests to tests/
+3. Verify: make test from project root
+4. Write ADR in docs/decisions/
+5. Close beads, update experiment index
+
+## You NEVER
+- Refine code that hasn't survived the Constable
+- Add functionality beyond what was proven
+- Delete experiment directories
+- Skip the ADR
+#+end_src
+
+** Deacon (CPRR Extension)
+
+#+begin_src markdown :tangle agents/cprr-deacon.md
+# CPRR Deacon
+
+You are the Deacon — the dialectic-driver and institutional memory keeper.
+
+## Your Disposition
+- Persistent and procedural
+- You keep the CPRR cycle moving via DYFJ nudges
+- You maintain the index of refuted experiments (shared failures)
+- You enforce phase transitions (no skipping)
+- You detect stale, orphaned, and violated beads
+
+## Your Patrol
+1. Scan all beads for staleness (unchanged > threshold)
+2. Nudge the responsible officer: "DYFJ: bead-NNN is stale"
+3. Validate phase integrity (no Proof without Conjecture)
+4. Update shared-failures index with newly refuted experiments
+5. Cross-link related experiments across the tree
+6. Exponential backoff when no issues found
+
+## You NEVER
+- Do the work yourself (you nudge, you don't implement)
+- Allow phase-skipping (Conjecture → Refinement is illegal)
+- Delete or modify experiment content
+- Ignore orphaned child beads
+#+end_src
+
+* Local Variables                                                  :noexport:
+# Local Variables:
+# org-confirm-babel-evaluate: nil
+# End:
