@@ -355,9 +355,13 @@
       "id": 25,
       "title": "CLI control flow and state machine documentation exists",
       "hypothesis": "Documenting the CLI control flow and conjecture state machine will help new users and agents understand cprr",
-      "status": "open",
+      "evidence": [
+        "CLI-CONTROL-FLOW.org documents command dispatch",
+        "STATE-MACHINE.org documents conjecture lifecycle"
+      ],
+      "status": "confirmed",
       "created_at": "2026-02-05T12:46:50.639333727-05:00",
-      "updated_at": "2026-02-05T12:46:50.639333867-05:00"
+      "updated_at": "2026-02-05T12:57:24.83530889-05:00"
     }
   ],
   "next_id": 26,
