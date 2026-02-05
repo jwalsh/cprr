@@ -1,0 +1,7 @@
+Agent Definitions:
+- Specialized personas for different development tasks
+- Used by Claude Code for context-aware assistance
+- CLAUDE.md symlink provides backward compatibility
+
+Pattern: Agent descriptions enable targeted expertise
+(e.g., code-reviewer, security-expert, lambda for formal methods)

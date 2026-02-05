@@ -1,0 +1,4 @@
+Setup Notes:
+- Zero dependencies, pure stdlib
+- Module path matches GitHub repo for go install
+- Minimum Go 1.21 for min() builtin

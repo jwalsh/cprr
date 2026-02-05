@@ -1,0 +1,7 @@
+Project Specification Document:
+- Org-mode format for literate programming
+- Can be tangled to extract code blocks
+- Documents design rationale and decisions
+- Contains state machine formal specification
+
+Use: make tangle to extract code blocks
