@@ -1,0 +1,328 @@
+#+TITLE: The Dialectic of Calculus: From Heuristic to Formalization
+#+SUBTITLE: Common Themes & Reading Order for a Guile-Based Mathematical Programme
+#+AUTHOR: JW
+#+DATE: 2025-02-05
+#+OPTIONS: toc:2 num:t H:3
+#+STARTUP: overview
+#+PROPERTY: header-args :eval no :exports both
+
+* Preface: Why These Books Together
+:PROPERTIES:
+:CUSTOM_ID: preface
+:END:
+
+These seven texts are not an arbitrary syllabus.  Read together, they
+trace a single arc: /how mathematical knowledge grows through
+conjecture, proof, refutation, and progressive generalization/.
+
+Pólya supplies the heuristic engine---the art of plausible reasoning
+that gets you to a conjecture in the first place.  Lakatos shows what
+happens /after/ the conjecture: the dialectical cycle of
+proof-attempts and counterexamples that refines both theorem and
+concept simultaneously.  The five calculus texts then instantiate this
+pattern across increasingly general domains, each one extending the
+last by relaxing assumptions the predecessor took for granted.
+
+The =guile-*= projects formalize these ideas computationally---making
+the dialectic auditable, the heuristics executable, and the
+generalizations type-checked.
+
+* The Texts at a Glance
+
+| Ref          | Title                                     | Authors            | Domain                        |
+|--------------+-------------------------------------------+--------------------+-------------------------------|
+| —            | /How to Solve It/                         | Pólya              | Heuristic methodology         |
+| —            | /Proofs and Refutations/                  | Lakatos            | Philosophy of mathematics     |
+| =guile-cag=  | /Calculus & Analytic Geometry/            | Thomas & Finney    | Classical single/multi-var    |
+| =guile-fsof= | /Fourier Series & Orthogonal Functions/  | Davis              | Harmonic analysis             |
+| =guile-cov=  | /Calculus of Variations/                  | Gelfand & Fomin    | Functional optimization       |
+| =guile-ae=   | /Asymptotic Expansions/                   | Erdélyi            | Divergent series, asymptotics |
+| =guile-fc=   | /Fractional Calculus/                     | Oldham & Spanier   | Generalized differ-integrals  |
+
+* Common Themes
+
+** Theme 1: Conjecture → Proof → Refutation → Refinement
+
+The Lakatos cycle is the meta-pattern unifying everything here.
+
+- *Pólya* codifies /Phase 1/: generating conjectures through analogy,
+  specialization, and generalization.
+- *Lakatos* codifies /Phases 2–4/: the social and logical process by
+  which proofs are stress-tested and concepts stretched.
+- Each calculus text enacts this cycle within its own domain:
+  - Thomas & Finney establish the "naive conjecture" of classical
+    calculus (continuous, well-behaved functions).
+  - Davis refutes it: Fourier series converge for functions that
+    classical calculus can barely describe.
+  - Gelfand & Fomin generalize the object of study from numbers to
+    /functionals/, refuting the assumption that calculus operates on
+    finite-dimensional inputs.
+  - Erdélyi refutes the demand for convergence itself, showing that
+    divergent series carry precise asymptotic information.
+  - Oldham & Spanier refute the assumption that differentiation order
+    must be integer, completing the generalization.
+
+#+begin_src mermaid :file img/lakatos-cycle.png :mkdirp t
+graph TD
+    A["Naive Conjecture<br/>(Pólya's heuristics)"] --> B["Proof Attempt"]
+    B --> C["Counterexample<br/>(monster / exception)"]
+    C --> D{"Response Strategy"}
+    D -->|"Monster-barring"| E["Restrict domain"]
+    D -->|"Exception-barring"| F["Modify theorem"]
+    D -->|"Lemma-incorporation"| G["Refine proof &amp; concepts"]
+    E --> B
+    F --> B
+    G --> H["Improved Conjecture"]
+    H --> B
+
+    style A fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style H fill:#2d3a5e,stroke:#4a6a9e,color:#e0e0e0
+    style C fill:#5e2d2d,stroke:#9e4a4a,color:#e0e0e0
+#+end_src
+
+** Theme 2: Progressive Generalization of the Derivative
+
+A single thread runs through the five calculus texts: /what does it
+mean to differentiate?/
+
+#+begin_src mermaid :file img/generalization-ladder.png :mkdirp t
+graph BT
+    CAG["<b>guile-cag</b><br/>d/dx on ℝ → ℝ<br/>Classical derivative"] --> FSOF
+    FSOF["<b>guile-fsof</b><br/>Fourier coefficients<br/>Spectral derivative"] --> COV
+    COV["<b>guile-cov</b><br/>δF/δy<br/>Functional derivative"] --> AE
+    AE["<b>guile-ae</b><br/>Asymptotic differentiation<br/>Divergent-series methods"] --> FC
+    FC["<b>guile-fc</b><br/>d^α/dx^α, α ∈ ℝ<br/>Fractional differ-integral"]
+
+    style CAG fill:#1a3a1a,stroke:#4a7c4a,color:#c0d0c0
+    style FSOF fill:#1a2a4a,stroke:#4a6a9e,color:#c0d0e0
+    style COV fill:#3a1a4a,stroke:#7a4a9e,color:#d0c0e0
+    style AE fill:#4a3a1a,stroke:#9e7a4a,color:#e0d0c0
+    style FC fill:#4a1a1a,stroke:#9e4a4a,color:#e0c0c0
+#+end_src
+
+Each level /subsumes/ rather than replaces the one below it:
+- The classical derivative is a special case of the spectral derivative.
+- The spectral derivative is a special case of the functional derivative.
+- Asymptotic methods give meaning to formal operations the others reject.
+- The fractional derivative unifies integer-order differentiation and
+  integration into a single continuous operator.
+
+** Theme 3: Heuristics as First-Class Objects
+
+Pólya's heuristics---analogy, generalization, specialization,
+decomposition---are not mere pedagogical advice.  They recur as
+/structural operations/ in every text:
+
+| Heuristic          | Thomas & Finney    | Davis              | Gelfand & Fomin       | Erdélyi               | Oldham & Spanier       |
+|--------------------+--------------------+--------------------+-----------------------+-----------------------+------------------------|
+| *Analogy*          | Derivative ↔ slope | Time ↔ frequency   | Path ↔ function space | Convergent ↔ formal   | Integer ↔ real order   |
+| *Generalization*   | Single → multi-var | Periodic → L²      | Finite → infinite dim | Convergent → divergent | ℤ-order → ℝ-order     |
+| *Specialization*   | Limit definitions  | Fourier → Taylor   | Euler–Lagrange eqn    | Stirling's formula    | Γ(n+1) = n!            |
+| *Decomposition*    | Partial fractions  | Orthogonal basis   | Necessary conditions  | Saddle-point method   | Riemann–Liouville def  |
+
+** Theme 4: The Tension Between Rigor and Discovery
+
+Every one of these authors grapples with the same methodological
+tension:
+
+- *Pólya*: "Mathematics presented with rigor is a systematic deductive
+  science, but mathematics /in the making/ is an experimental
+  inductive science."
+- *Lakatos*: Formalism kills the dialectic; but informalism permits
+  error.  The resolution is /progressive formalization/.
+- *Davis*: Fourier's original arguments were non-rigorous but correct;
+  Dirichlet's rigorization changed the meaning of "function."
+- *Gelfand & Fomin*: Variational problems were solved by physicists
+  long before analysts made them precise.
+- *Erdélyi*: Divergent series "work" in practice; the theory of
+  asymptotic expansions explains /why/ without demanding convergence.
+- *Oldham & Spanier*: Fractional derivatives were conjectured by
+  Leibniz in 1695; rigorous foundations took 300 years.
+
+This tension maps directly onto the =guile-par= / elenctic-spec
+methodology: start informal (L0), harden progressively (L1–L3), and
+preserve the dialectical audit trail.
+
+** Theme 5: Computational Formalizability
+
+Each text's core ideas can be expressed as executable Guile programs:
+
+#+begin_src mermaid :file img/guile-architecture.png :mkdirp t
+graph LR
+    subgraph "Methodology Layer"
+        PAR["guile-par<br/>(Lakatos dialectic)"]
+        HTS["Pólya heuristics<br/>(search strategies)"]
+    end
+
+    subgraph "Mathematical Layer"
+        CAG["guile-cag<br/>Classical Calculus"]
+        FSOF["guile-fsof<br/>Fourier Series"]
+        COV["guile-cov<br/>Variations"]
+        AE["guile-ae<br/>Asymptotics"]
+        FC["guile-fc<br/>Fractional Calculus"]
+    end
+
+    PAR -->|"audit trail"| CAG
+    PAR -->|"audit trail"| FSOF
+    PAR -->|"audit trail"| COV
+    PAR -->|"audit trail"| AE
+    PAR -->|"audit trail"| FC
+
+    HTS -->|"search"| PAR
+
+    CAG --> FSOF
+    FSOF --> COV
+    COV --> AE
+    AE --> FC
+
+    style PAR fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style HTS fill:#2d3a5e,stroke:#4a6a9e,color:#e0e0e0
+#+end_src
+
+* Recommended Reading Order
+
+** Phase 0: Methodology (Read First, Return Often)
+
+#+begin_quote
+Read these before touching any calculus text.  They change /how/ you
+read mathematics, not just /what/ you read.
+#+end_quote
+
+1. *Pólya, /How to Solve It/* — Internalize the heuristic vocabulary:
+   analogy, generalization, specialization, auxiliary elements,
+   working backwards.  This is the language you will use to navigate
+   every subsequent text.
+
+2. *Lakatos, /Proofs and Refutations/* — Understand that definitions
+   are not given but /negotiated/ through the proof-refutation cycle.
+   This reframes every "definition" in the calculus texts as a
+   provisional settlement, not a decree.
+
+** Phase 1: The Classical Foundation
+
+3. [@3] *Thomas & Finney, /Calculus & Analytic Geometry/ (=guile-cag=)* —
+   Establish fluency with limits, derivatives, integrals, and series
+   in their standard setting.  Pay attention to where the authors
+   /restrict/ hypotheses (continuity, differentiability, uniform
+   convergence)---these are the monster-barring moves Lakatos warned
+   you about.
+
+** Phase 2: The First Generalization (Spectral)
+
+4. [@4] *Davis, /Fourier Series & Orthogonal Functions/ (=guile-fsof=)* —
+   The transition from pointwise to spectral thinking.  Here the
+   Lakatos cycle fires immediately: Fourier claimed any function could
+   be expanded; Dirichlet showed this fails without conditions; the
+   concept of "function" itself was refined.  Requires solid
+   integration theory from Phase 1.
+
+** Phase 3: The Variational Turn
+
+5. [@5] *Gelfand & Fomin, /Calculus of Variations/ (=guile-cov=)* —
+   The domain of the derivative shifts from numbers to entire
+   functions.  The Euler–Lagrange equation is the "derivative = 0"
+   condition lifted to infinite-dimensional space.  Fourier methods
+   from Phase 2 appear naturally in eigenvalue problems for
+   differential operators.
+
+** Phase 4: Beyond Convergence
+
+6. [@6] *Erdélyi, /Asymptotic Expansions/ (=guile-ae=)* — Requires
+   comfort with series from Phase 1 and special functions encountered
+   in Phases 2–3.  The key conceptual leap: a divergent series can
+   carry more useful information than a convergent one.  This is a
+   Lakatos-style refutation of the deepest assumption in classical
+   analysis.
+
+** Phase 5: The Final Generalization
+
+7. [@7] *Oldham & Spanier, /Fractional Calculus/ (=guile-fc=)* — Read
+   last.  It presupposes everything: classical calculus, Fourier
+   transforms (for defining fractional operators spectrally), the
+   Gamma function and special functions (from asymptotics), and
+   functional-analytic thinking (from variations).  The fractional
+   derivative is the capstone generalization that unifies
+   differentiation and integration into a single parameterized
+   operator.
+
+** Reading Order Summary
+
+#+begin_src mermaid :file img/reading-order.png :mkdirp t
+graph LR
+    P0["<b>Phase 0</b><br/>Methodology"]
+    P1["<b>Phase 1</b><br/>Classical"]
+    P2["<b>Phase 2</b><br/>Spectral"]
+    P3["<b>Phase 3</b><br/>Variational"]
+    P4["<b>Phase 4</b><br/>Asymptotic"]
+    P5["<b>Phase 5</b><br/>Fractional"]
+
+    P0 --> P1 --> P2 --> P3 --> P4 --> P5
+
+    P0a["Pólya"] --> P0
+    P0b["Lakatos"] --> P0
+    P1a["Thomas &amp; Finney"] --> P1
+    P2a["Davis"] --> P2
+    P3a["Gelfand &amp; Fomin"] --> P3
+    P4a["Erdélyi"] --> P4
+    P5a["Oldham &amp; Spanier"] --> P5
+
+    style P0 fill:#2d4a2d,stroke:#4a7c4a,color:#e0e0e0
+    style P1 fill:#1a3a1a,stroke:#4a7c4a,color:#c0d0c0
+    style P2 fill:#1a2a4a,stroke:#4a6a9e,color:#c0d0e0
+    style P3 fill:#3a1a4a,stroke:#7a4a9e,color:#d0c0e0
+    style P4 fill:#4a3a1a,stroke:#9e7a4a,color:#e0d0c0
+    style P5 fill:#4a1a1a,stroke:#9e4a4a,color:#e0c0c0
+#+end_src
+
+* Connections to the Guile Programme
+
+** The =guile-par= Thread
+
+Every =guile-*= project should maintain a =par-log=: a structured
+record of conjectures attempted, counterexamples found, and concept
+refinements made during development.  This is the computational
+instantiation of Lakatos's method.
+
+#+begin_src scheme :tangle no
+;; Sketch: a par-log entry
+(define-record-type <par-entry>
+  (make-par-entry id conjecture proof-attempt counterexample resolution)
+  par-entry?
+  (id             par-entry-id)
+  (conjecture     par-entry-conjecture)
+  (proof-attempt  par-entry-proof-attempt)
+  (counterexample par-entry-counterexample)
+  (resolution     par-entry-resolution))  ; 'monster-bar | 'exception-bar | 'lemma-incorporate
+#+end_src
+
+** The Elenctic Hardening Levels
+
+The reading order maps to the elenctic-spec levels:
+
+| Level | Elenctic Stage            | Reading Phase             | Characteristic                     |
+|-------+---------------------------+---------------------------+------------------------------------|
+| L0    | Vibe coding               | Pre-Pólya                 | No systematic method               |
+| L1    | Heuristic specification   | Pólya + Lakatos           | Named strategies, dialectic record |
+| L2    | Property-based testing    | Thomas & Finney → Davis   | Concrete domains, QuickCheck-style |
+| L3    | Lightweight formal methods | Gelfand → Erdélyi → O&S  | Type-level guarantees, contracts   |
+
+* Appendix: Cross-Reference Matrix
+
+Which concepts from the methodology texts appear in which calculus text:
+
+| Concept (Pólya/Lakatos)       | =guile-cag= | =guile-fsof= | =guile-cov= | =guile-ae= | =guile-fc= |
+|-------------------------------+-------------+--------------+-------------+------------+------------|
+| Analogy                       | ✓           | ✓✓           | ✓✓          | ✓          | ✓✓✓        |
+| Generalization                | ✓           | ✓✓           | ✓✓✓         | ✓✓         | ✓✓✓        |
+| Monster-barring               | ✓✓✓         | ✓✓           | ✓           | ✓          | ✓          |
+| Exception-barring             | ✓✓          | ✓✓✓          | ✓✓          | ✓✓✓        | ✓✓         |
+| Lemma-incorporation           | ✓           | ✓✓           | ✓✓✓         | ✓✓         | ✓✓✓        |
+| Proof-generated concepts      | ✓           | ✓✓✓          | ✓✓          | ✓✓✓        | ✓✓✓        |
+| Progressive formalization     | ✓✓          | ✓✓           | ✓✓✓         | ✓✓✓        | ✓✓✓        |
+
+(✓ = present, ✓✓ = prominent, ✓✓✓ = defining characteristic)
+
+* Local Variables                                                  :noexport:
+# Local Variables:
+# org-confirm-babel-evaluate: nil
+# End:
