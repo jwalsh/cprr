@@ -1,0 +1,16 @@
+Implementation Notes:
+- Levenshtein distance for command suggestions (Git-style)
+- Guards are composable functions on Conjecture
+- Version info injected via ldflags at build time
+- Per-command help with -h/--help
+- Global flags: -v (version), -V (verbose), -h (help)
+- Errors to stderr, output to stdout
+- Exit codes: 0 success, 1 error
+
+Testing:
+- Manual integration test via make test-integration
+- Guard violations tested for all state transitions
+
+Deviations:
+- Used --hypothesis instead of -h for add command to avoid
+  conflict with help flag (noted in help text)
