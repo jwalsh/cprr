@@ -164,25 +164,37 @@
       "id": 12,
       "title": "Conjectures should be project-local by default, not global",
       "hypothesis": "Project-specific hypotheses (experiments/, .beads/) should live in .cprr/ not ~/.cprr/ - global store causes sync issues and mixes unrelated projects",
-      "status": "open",
+      "evidence": [
+        "Implementation verified: cmdInit() defaults to useLocal=true (main.go:379-380)",
+        "Help text confirms: 'Default: project-local store in ./.cprr (recommended for git tracking)'",
+        "Test: 'cprr init' in empty dir creates ./.cprr/conjectures.json (not ~/.cprr/)",
+        "Global store requires explicit --global flag (main.go:389-391)",
+        "Store discovery order: local .cprr/ takes precedence over ~/.cprr/ (main.go:145)"
+      ],
+      "status": "confirmed",
       "tags": [
         "architecture",
         "design"
       ],
       "created_at": "2026-02-05T09:52:24.739256-05:00",
-      "updated_at": "2026-02-05T09:52:24.739256-05:00"
+      "updated_at": "2026-02-05T15:05:59.362394519-05:00"
     },
     {
       "id": 13,
       "title": "cprr should use bead semantics for branch-style isolation",
       "hypothesis": "When cprr isn't core to a repo, it should support branch-like isolation (like beads) rather than a single global/local store - enables ephemeral hypothesis tracking without polluting the main project",
-      "status": "open",
+      "evidence": [
+        "ANALYSIS: Bead semantics examined - key features: (1) Hash-based IDs prevent collisions across branches, (2) Shared SQLite database with worktree-aware discovery, (3) JSONL sync with merge drivers, (4) Daemon mode with branch-safe commit routing",
+        "COMPARISON: cprr already has sufficient isolation - (1) .cprr/ local store exists, (2) git worktrees provide branch isolation with each worktree having its own .cprr/ copy, (3) experiments/ directory provides content isolation - beads' sophisticated features (daemon, hash-IDs, JSONL sync) solve different problems (multi-agent concurrent access to SAME store)",
+        "VERDICT: REFUTE - cprr does NOT need bead semantics because: (1) cprr uses simple JSON store per-project, beads uses SQLite+JSONL for cross-machine sync, (2) git worktrees already provide branch-style isolation for cprr (each worktree copies .cprr/), (3) bead semantics solve concurrent multi-agent write access - cprr's use case is single-agent per-worktree, (4) adding hash-IDs/daemon/sync would increase complexity without benefit for cprr's hypothesis-tracking use case"
+      ],
+      "status": "refuted",
       "tags": [
         "architecture",
         "design"
       ],
       "created_at": "2026-02-05T09:53:10.932471-05:00",
-      "updated_at": "2026-02-05T09:53:10.932472-05:00"
+      "updated_at": "2026-02-05T15:06:43.787351173-05:00"
     },
     {
       "id": 14,
