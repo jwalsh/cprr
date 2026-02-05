@@ -183,8 +183,24 @@
       ],
       "created_at": "2026-02-05T09:53:10.932471-05:00",
       "updated_at": "2026-02-05T09:53:10.932472-05:00"
+    },
+    {
+      "id": 14,
+      "title": "cprr has a coherent multi-agent collaboration story",
+      "hypothesis": "With worktrees, branch isolation, local-first stores, and git merge semantics, cprr supports parallel work across machines/agents with tractable integration",
+      "evidence": [
+        "Demonstrated today: two agents on different machines (001-quickstart-command vs 002-alloy-state-machine) worked in parallel, merged cleanly, experiments indexed in README.org",
+        "Components: .cprr/ in git, worktrees/ gitignored, experiments/NNN structure, .beads/ tracking, lint-experiments.sh validation"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "architecture",
+        "validation"
+      ],
+      "created_at": "2026-02-05T09:54:08.860587-05:00",
+      "updated_at": "2026-02-05T09:55:17.084167-05:00"
     }
   ],
-  "next_id": 14,
+  "next_id": 15,
   "config": {}
 }
