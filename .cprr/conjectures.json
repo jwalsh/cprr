@@ -321,8 +321,20 @@
       ],
       "created_at": "2026-02-05T12:17:42.101746-05:00",
       "updated_at": "2026-02-05T12:18:17.672378-05:00"
+    },
+    {
+      "id": 23,
+      "title": "worktrees/ directory should be gitignored for multi-machine isolation",
+      "hypothesis": "Adding worktrees/ to .gitignore ensures each machine can have independent worktrees without conflicts - agents on different machines won't see or interfere with each other's parallel branch checkouts",
+      "evidence": [
+        ".gitignore:61 already contains 'worktrees/'",
+        "git check-ignore confirms worktrees/ is ignored (exit 0)"
+      ],
+      "status": "confirmed",
+      "created_at": "2026-02-05T12:26:13.699918887-05:00",
+      "updated_at": "2026-02-05T12:26:36.450944031-05:00"
     }
   ],
-  "next_id": 23,
+  "next_id": 24,
   "config": {}
 }
