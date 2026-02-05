@@ -1,0 +1,67 @@
+#+TITLE: Experiments Index
+#+AUTHOR: cprr team
+#+DATE: 2026-02-05
+
+* Overview
+
+Experiment-driven development following the CPRR methodology.
+
+* Structure
+
+Each experiment follows the pattern =NNN-description/=:
+
+#+BEGIN_SRC
+experiments/
+├── README.org             # This index
+├── 001-quickstart-command/
+│   ├── CONJECTURE.md      # Hypothesis and falsification criteria
+│   ├── PROOF.md           # Evidence supporting the hypothesis
+│   ├── REFUTATION.md      # Attempts to disprove (may be empty)
+│   ├── REFINEMENT.md      # Scope changes based on evidence
+│   └── Makefile           # Local build/test commands
+└── NNN-description/
+    └── ...
+#+END_SRC
+
+* Current Experiments
+
+| # | Name | Status | Conjecture |
+|---+------+--------+------------|
+| 001 | quickstart-command | CONFIRMED | =cprr quickstart= helps agents understand the tool |
+| 002 | alloy-state-machine | CONFIRMED | Alloy is better than TLA+ for cprr's state machine |
+
+* Creating a New Experiment
+
+#+BEGIN_SRC bash
+# Get next number
+NEXT=$(printf "%03d" $(($(ls -d [0-9]* 2>/dev/null | wc -l) + 1)))
+
+# Create structure
+mkdir -p ${NEXT}-my-hypothesis
+cd ${NEXT}-my-hypothesis
+
+# Create CONJECTURE.md with hypothesis, motivation, falsification criteria
+# Then implement, gather evidence, attempt refutation
+#+END_SRC
+
+* Workflow
+
+1. *CONJECTURE* — State hypothesis with falsification criteria
+2. *PROOF* — Gather evidence supporting the hypothesis
+3. *REFUTATION* — Actively try to disprove (intellectual honesty)
+4. *REFINEMENT* — Adjust scope based on what was learned
+
+* Refuted Experiments
+
+Refuted experiments are *not deleted*. They represent negative knowledge —
+things we tried that didn't work. Search them before proposing new ideas:
+
+#+BEGIN_SRC bash
+grep -r "Status.*REFUTED" experiments/*/CONJECTURE.md
+#+END_SRC
+
+* Validation
+
+#+BEGIN_SRC bash
+make lint-experiments  # or scripts/lint-experiments.sh
+#+END_SRC
