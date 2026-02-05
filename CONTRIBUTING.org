@@ -3,11 +3,12 @@
 
 * Prerequisites
 
-| Tool   | Version | Purpose              |
-|--------+---------+----------------------|
-| Go     | 1.21+   | Build and test       |
-| git    | 2.x     | Version control      |
-| gmake  | 4.x     | Build automation     |
+| Tool    | Version | Purpose              |
+|---------+---------+----------------------|
+| Go      | 1.23+   | Build and test       |
+| git     | 2.x     | Version control      |
+| gmake   | 4.x     | Build automation     |
+| direnv  | 2.x     | Environment loading  |
 
 * Local Development Setup
 
@@ -16,61 +17,147 @@
 git clone https://github.com/jwalsh/cprr.git
 cd cprr
 
+# Create .env from template
+gmake .env
+
+# Edit .env for your platform (see "Platform Notes" below)
+# Then enable direnv
+direnv allow
+
 # Build
-go build -o cprr .
+gmake cprr
 
 # Run locally
 ./cprr init --examples
 ./cprr list
 
 # Run tests
-go test -v ./...
+gmake test
 
-# Install to GOPATH/bin
-go install .
+# Install to $GOPATH/bin
+gmake install
 #+END_SRC
+
+** PATH Setup
+
+=gmake install= puts the binary in =~/go/bin/= (standard Go semantics).
+Ensure your PATH includes user-local bin directories.
+
+Add to =~/.profile=:
+
+#+BEGIN_SRC bash
+export PATH=$HOME/go/bin:$HOME/.local/bin:$PATH
+#+END_SRC
+
+Verify after sourcing:
+
+#+BEGIN_SRC bash
+. ~/.profile
+which cprr        # → ~/go/bin/cprr
+cprr --version
+#+END_SRC
+
+** Environment Configuration
+
+The project uses =direnv= to load =.env= into your shell:
+
+#+BEGIN_SRC
+.env.example   → Template with documented options (committed)
+.env           → Local overrides (gitignored)
+.envrc         → Loads .env via dotenv_if_exists (committed)
+#+END_SRC
+
+Key variables:
+
+| Variable          | Default | Description                       |
+|-------------------+---------+-----------------------------------|
+| =GO=              | =go=    | Go binary name (see platform notes) |
+| =CPRR_DATA_DIR=   | -       | Override default data location    |
+| =CPRR_CI=          | -       | Set =true= in CI environments    |
+
+** Platform Notes
+
+*** FreeBSD
+
+Go is installed as a versioned binary (e.g., =go124=):
+
+#+BEGIN_SRC bash
+# Check installed version
+pkg info | grep go
+
+# Edit .env
+echo "GO=go124" >> .env
+direnv allow
+#+END_SRC
+
+*** Linux / macOS
+
+The default =GO=go= should work. No =.env= changes needed.
 
 * Project Structure
 
 #+BEGIN_SRC
 cprr/
-├── main.go           # CLI entry point, commands, state machine
-├── go.mod            # Module definition
-├── .gitignore        # Build artifacts
-├── README.org        # User documentation
-└── CONTRIBUTING.org  # This file
+├── main.go              # CLI entry point, commands, state machine
+├── go.mod               # Module definition
+├── Makefile             # Build automation (uses $(GO) variable)
+├── .env.example         # Environment template
+├── .envrc               # direnv configuration
+├── .gitignore           # Build artifacts, .env, worktrees/
+├── .beads/              # Bead tracking (bd)
+├── .cprr/               # Local conjecture store
+├── scripts/             # Helper scripts (gmake fallthrough)
+│   └── worktrees.sh     # Git worktree management
+├── experiments/         # CPRR experiment directories
+├── docs/                # Internal documentation (org-mode)
+│   ├── CLI-CONTROL-FLOW.org
+│   ├── STATE-MACHINE.org
+│   ├── CPRR.org
+│   └── ...
+├── README.org           # User documentation
+├── CONTRIBUTING.org     # This file
+├── AGENTS.md            # Coding agent instructions
+└── SKILL.md             # Skill definitions
 #+END_SRC
 
 * Build Commands
 
+All build commands go through =gmake= with the =GO= variable:
+
 #+BEGIN_SRC bash
 # Development build
-go build -o cprr .
+gmake build-dev
 
-# Release build (stripped, optimized)
-go build -ldflags="-s -w" -o cprr .
+# Release build (stripped, version-stamped)
+gmake cprr
 
-# Cross-compile
-GOOS=linux GOARCH=amd64 go build -o cprr-linux-amd64 .
-GOOS=darwin GOARCH=arm64 go build -o cprr-darwin-arm64 .
-GOOS=windows GOARCH=amd64 go build -o cprr-windows-amd64.exe .
+# Cross-compile all platforms
+gmake build-all
+
+# Install to $GOPATH/bin
+gmake install
 
 # Check for issues
-go vet ./...
-go fmt ./...
+gmake lint-go
 #+END_SRC
 
 * Testing
 
 #+BEGIN_SRC bash
 # Run all tests
-go test -v ./...
+gmake test
 
 # Run with coverage
-go test -cover ./...
+gmake test-cover
 
 # Run with race detector
-go test -race ./...
+gmake test-race
+
+# Integration test (full CLI workflow)
+gmake test-integration
+
+# Quick validation (lint + test)
+gmake check
 #+END_SRC
 
 * Manual Testing Checklist
@@ -192,6 +279,23 @@ To add a new guard:
                      │ abandoned │
                      └───────────┘
 #+END_SRC
+
+* Worktrees
+
+Parallel work uses git worktrees under =worktrees/= (gitignored):
+
+#+BEGIN_SRC bash
+# List worktrees and sync with remote
+gmake worktrees ARGS=sync
+
+# Create a worktree for a feature branch
+gmake worktrees ARGS="add feat/CPRR-xxx-description"
+
+# Prune stale worktrees
+gmake worktrees ARGS=prune
+#+END_SRC
+
+See =AGENTS.md= for the full worktree workflow.
 
 * Release Process
 
