@@ -123,8 +123,56 @@
       ],
       "created_at": "2026-02-05T09:23:56.602384-05:00",
       "updated_at": "2026-02-05T09:24:55.471808-05:00"
+    },
+    {
+      "id": 9,
+      "title": "Vale is better than custom linters for experiment content validation",
+      "hypothesis": "Vale's prose linting + custom vocabulary catches more style issues than bash grep checks, with less maintenance burden",
+      "status": "open",
+      "tags": [
+        "tooling",
+        "dx"
+      ],
+      "created_at": "2026-02-05T09:49:58.827624-05:00",
+      "updated_at": "2026-02-05T09:49:58.827624-05:00"
+    },
+    {
+      "id": 10,
+      "title": "Refinery pattern simplifies multi-agent merge conflicts",
+      "hypothesis": "beads and cprr could use append-only logs with periodic refinement/compaction to avoid merge conflicts when multiple agents work in parallel",
+      "status": "testing",
+      "tags": [
+        "architecture",
+        "collaboration"
+      ],
+      "created_at": "2026-02-05T09:50:55.473067-05:00",
+      "updated_at": "2026-02-05T09:52:14.607809-05:00"
+    },
+    {
+      "id": 11,
+      "title": "Branches and worktrees prevent duplicate experiment numbers",
+      "hypothesis": "When agents use isolated branches/worktrees, experiment number collisions are caught at merge time and trivially resolved by renumbering",
+      "status": "testing",
+      "tags": [
+        "collaboration",
+        "git"
+      ],
+      "created_at": "2026-02-05T09:51:35.6364-05:00",
+      "updated_at": "2026-02-05T09:51:35.704158-05:00"
+    },
+    {
+      "id": 12,
+      "title": "Conjectures should be project-local by default, not global",
+      "hypothesis": "Project-specific hypotheses (experiments/, .beads/) should live in .cprr/ not ~/.cprr/ - global store causes sync issues and mixes unrelated projects",
+      "status": "open",
+      "tags": [
+        "architecture",
+        "design"
+      ],
+      "created_at": "2026-02-05T09:52:24.739256-05:00",
+      "updated_at": "2026-02-05T09:52:24.739256-05:00"
     }
   ],
-  "next_id": 9,
+  "next_id": 13,
   "config": {}
 }

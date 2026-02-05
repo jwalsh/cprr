@@ -56,3 +56,6 @@ __debug_bin*
 *.key
 credentials.json
 secrets.yaml
+
+# Worktrees for parallel agent work
+worktrees/
