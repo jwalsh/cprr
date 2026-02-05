@@ -1,0 +1,33 @@
+## Testing Notes for quickstart implementation
+
+### Test Matrix
+- Command execution: PASS
+- Output line count: 57 lines (target <100): PASS
+- Execution time: 0.002s (target <5s): PASS
+- Help flag (--help): PASS
+- Demo conjecture creation: PASS
+- State machine display: PASS
+- Idempotency (multiple runs): PASS - creates new demo each run
+
+### Issues Encountered
+
+1. **Beads legacy database warning**: During `bd create`, received warning about
+   legacy database lacking repository fingerprint. Created issue but warning
+   did not block functionality.
+
+2. **Merge conflict on rebase**: Remote had updated .beads/issues.jsonl with
+   closed issues. Resolved by merging both changes - keeping closed status
+   from remote and adding new CPRR-2h9 issue as closed.
+
+3. **Flag conflict**: Initial implementation attempted to use `-h` for hypothesis
+   but this conflicts with help flag. Changed to `--hypothesis` in `add` command.
+   The quickstart command only uses `--help` so no conflict.
+
+### Adversarial Testing
+- Multiple sequential runs: Creates new demo conjecture each time (acceptable)
+- Fresh directory without store: Auto-creates .cprr/ directory
+- go vet: No issues found
+
+### Notes
+- quickstart forces localMode=true to avoid polluting global ~/.cprr store
+- Demo conjectures accumulate (#5, #6, #7...) - users can delete if desired
