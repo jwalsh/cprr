@@ -257,8 +257,8 @@ cprr/
 ├── README.org           # User documentation
 ├── CONTRIBUTING.org     # Developer guide
 ├── CPRR.org             # Project specification
-├── READING.org          # Reference materials
-├── ROLES.org            # Team structure
+├── docs/READING.org     # Reference materials
+├── docs/ROLES.org       # Team structure
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml       # Lint & build
