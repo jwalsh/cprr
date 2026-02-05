@@ -62,6 +62,14 @@ test-cover:
 test-race:
 	go test -race ./...
 
+test-cli: $(BINARY)
+	@chmod +x docs/test-cli.sh 2>/dev/null || true
+	@if [ -x docs/test-cli.sh ]; then \
+		docs/test-cli.sh; \
+	else \
+		echo "Run: make tangle  # to generate test-cli.sh from docs/CLI-TESTING.org"; \
+	fi
+
 # Integration test
 test-integration: $(BINARY)
 	@echo "==> Integration test"

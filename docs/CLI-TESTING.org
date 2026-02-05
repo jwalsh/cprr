@@ -1,0 +1,370 @@
+#+TITLE: CLI Testing Matrix
+#+AUTHOR: cprr team
+#+DESCRIPTION: Flag and parameter validation for cprr CLI
+
+* Overview
+
+This document provides a testing matrix for validating CLI flag combinations,
+parameter parsing, and expected behaviors.
+
+* Global Flags
+
+| Flag | Long | Description | Exits | Test |
+|------+------+-------------+-------+------|
+| -h | --help | Show help | Yes | =cprr -h= |
+| -v | --version | Show version | Yes | =cprr -v= |
+| -V | --verbose | Verbose output | No | =cprr -V list= |
+
+** Global Flag Combinations
+
+| Command | Expected | Status |
+|---------+----------+--------|
+| =cprr= | Show help | [ ] |
+| =cprr -h= | Show help | [ ] |
+| =cprr --help= | Show help | [ ] |
+| =cprr -v= | Show version | [ ] |
+| =cprr --version= | Show version | [ ] |
+| =cprr -V -v= | Verbose version | [ ] |
+| =cprr help= | Show help | [ ] |
+| =cprr version= | Show version | [ ] |
+
+* Command: init
+
+#+BEGIN_SRC
+cprr init [flags]
+#+END_SRC
+
+** Flags
+
+| Flag | Long | Type | Default | Description |
+|------+------+------+---------+-------------|
+| -l | --local | bool | false | Use ./.cprr |
+| -e | --examples | bool | false | Seed examples |
+| -f | --force | bool | false | Overwrite |
+| -h | --help | bool | false | Show help |
+
+** Test Matrix
+
+| Flags | Precondition | Expected | Exit | Status |
+|-------+--------------+----------+------+--------|
+| (none) | No store | Create ~/.cprr | 0 | [ ] |
+| (none) | Store exists | Error: exists | 1 | [ ] |
+| --local | No store | Create ./.cprr | 0 | [ ] |
+| --local | .cprr exists | Error: exists | 1 | [ ] |
+| --force | Store exists | Overwrite | 0 | [ ] |
+| --examples | No store | Create + seed | 0 | [ ] |
+| -l -e | No store | Local + seed | 0 | [ ] |
+| -l -e -f | .cprr exists | Overwrite local | 0 | [ ] |
+| --help | Any | Show init help | 0 | [ ] |
+
+* Command: add
+
+#+BEGIN_SRC
+cprr add <title> [flags]
+#+END_SRC
+
+** Flags
+
+| Flag | Long | Type | Default | Description |
+|------+--------------+--------+---------+----------------------|
+| | --hypothesis | string | "" | Hypothesis statement |
+| -t | --tags | string | "" | Comma-separated tags |
+| -h | --help | bool | false | Show help |
+
+** Parameter Matrix
+
+| Args | Flags | Expected | Exit | Status |
+|------+-------+----------+------+--------|
+| (none) | | Error: missing title | 1 | [ ] |
+| "Title" | | Create, warn no hypothesis | 0 | [ ] |
+| "Title" | --hypothesis "H" | Create with hypothesis | 0 | [ ] |
+| "Title" | -t "a,b" | Create with tags | 0 | [ ] |
+| "Title" | --hypothesis "H" -t "a" | Create with both | 0 | [ ] |
+| "Title" | --help | Show add help | 0 | [ ] |
+
+** Edge Cases
+
+| Input | Expected | Status |
+|-------+----------+--------|
+| Empty title "" | Error or empty title? | [ ] |
+| Title with spaces | Quoted works | [ ] |
+| Tags with spaces | "a, b" -> ["a", " b"]? | [ ] |
+| Unicode title | Should work | [ ] |
+| Very long title | Should work | [ ] |
+
+* Command: list
+
+#+BEGIN_SRC
+cprr list [flags]
+#+END_SRC
+
+** Flags
+
+| Flag | Long | Type | Default | Description |
+|------+----------+--------+---------+---------------|
+| -s | --status | string | "" | Filter status |
+| | --tag | string | "" | Filter tag |
+| -h | --help | bool | false | Show help |
+
+** Filter Matrix
+
+| --status | --tag | Data | Expected | Status |
+|----------+-------+------+----------+--------|
+| | | Empty | "No conjectures" | [ ] |
+| | | Has data | List all | [ ] |
+| open | | Mixed | Only open | [ ] |
+| testing | | Mixed | Only testing | [ ] |
+| confirmed | | None match | Empty result | [ ] |
+| invalid | | Any | Empty (no error) | [ ] |
+| | perf | Has tag | Only tagged | [ ] |
+| | missing | None match | Empty result | [ ] |
+| open | perf | Mixed | Intersection | [ ] |
+
+* Command: show
+
+#+BEGIN_SRC
+cprr show <id>
+#+END_SRC
+
+** Parameter Matrix
+
+| ID | Data | Expected | Exit | Status |
+|----+------+----------+------+--------|
+| (none) | Any | Error: missing ID | 1 | [ ] |
+| 1 | Exists | Show details | 0 | [ ] |
+| 1 | Not exists | Error: not found | 1 | [ ] |
+| abc | Any | Error: invalid ID | 1 | [ ] |
+| -1 | Any | Error: not found | 1 | [ ] |
+| 0 | Any | Error: not found | 1 | [ ] |
+
+* Command: next
+
+#+BEGIN_SRC
+cprr next <id> [flags]
+#+END_SRC
+
+** Flags
+
+| Flag | Long | Type | Default | Description |
+|------+-----------+------+---------+---------------|
+| -n | --dry-run | bool | false | Preview only |
+| -f | --force | bool | false | Bypass guards |
+| -h | --help | bool | false | Show help |
+
+** State Transition Matrix
+
+| Current | Has Hypothesis | Evidence | Flags | Expected | Exit | Status |
+|---------+----------------+----------+-------+----------+------+--------|
+| open | No | 0 | | Guard fail | 1 | [ ] |
+| open | Yes | 0 | | -> testing | 0 | [ ] |
+| open | No | 0 | --force | -> testing | 0 | [ ] |
+| open | No | 0 | --dry-run | Preview fail | 0 | [ ] |
+| testing | Yes | 0 | | Guard fail | 1 | [ ] |
+| testing | Yes | 1 | | Guard fail | 1 | [ ] |
+| testing | Yes | 2 | | -> confirmed | 0 | [ ] |
+| testing | Yes | 1 | --force | -> confirmed | 0 | [ ] |
+| confirmed | - | - | | Terminal state | 0 | [ ] |
+| refuted | - | - | | Terminal state | 0 | [ ] |
+| abandoned | - | - | | Terminal state | 0 | [ ] |
+
+** Guard Conditions
+
+| Transition | Guard | Check |
+|--------------------+----------------------+-------------------------|
+| open -> testing | hypothesis_required | Hypothesis != "" |
+| testing -> confirmed | min_evidence | len(Evidence) >= 2 |
+| testing -> confirmed | hypothesis_required | Hypothesis != "" |
+| testing -> refuted | min_evidence | len(Evidence) >= 1 |
+| * -> abandoned | (none) | Always allowed |
+
+* Command: evidence
+
+#+BEGIN_SRC
+cprr evidence <id> <text...>
+#+END_SRC
+
+** Parameter Matrix
+
+| ID | Text | Expected | Exit | Status |
+|----+------+----------+------+--------|
+| (none) | | Error: missing ID | 1 | [ ] |
+| 1 | (none) | Error: missing text | 1 | [ ] |
+| 1 | "text" | Add evidence | 0 | [ ] |
+| 1 | multi word | Join as single | 0 | [ ] |
+| 999 | "text" | Error: not found | 1 | [ ] |
+
+* Command: status
+
+#+BEGIN_SRC
+cprr status <id> <status>
+#+END_SRC
+
+** Status Values
+
+| Value | Valid | Description |
+|-----------+-------+-------------|
+| open | Yes | Initial state |
+| testing | Yes | Under test |
+| confirmed | Yes | Hypothesis confirmed |
+| refuted | Yes | Hypothesis refuted |
+| abandoned | Yes | Gave up |
+| invalid | No | Error |
+| OPEN | No | Case sensitive? |
+
+** Parameter Matrix
+
+| ID | Status | Expected | Exit | Status |
+|----+--------+----------+------+--------|
+| (none) | | Error: missing ID | 1 | [ ] |
+| 1 | (none) | Error: missing status | 1 | [ ] |
+| 1 | open | Set to open | 0 | [ ] |
+| 1 | testing | Set to testing | 0 | [ ] |
+| 1 | invalid | Error: invalid status | 1 | [ ] |
+| 999 | open | Error: not found | 1 | [ ] |
+
+* Command: delete
+
+#+BEGIN_SRC
+cprr delete <id>
+#+END_SRC
+
+** Parameter Matrix
+
+| ID | Data | Expected | Exit | Status |
+|----+------+----------+------+--------|
+| (none) | Any | Error: missing ID | 1 | [ ] |
+| 1 | Exists | Delete, confirm | 0 | [ ] |
+| 1 | Not exists | Error: not found | 1 | [ ] |
+| abc | Any | Error: invalid ID | 1 | [ ] |
+
+* Command Aliases
+
+| Alias | Canonical | Status |
+|-------+-----------+--------|
+| ls | list | [ ] |
+| rm | delete | [ ] |
+| ev | evidence | [ ] |
+| get | show | [ ] |
+
+* Error Handling Matrix
+
+| Scenario | Expected Output | Exit Code | Status |
+|----------+-----------------+-----------+--------|
+| Unknown command | Error + suggestion | 1 | [ ] |
+| Typo "lst" | "Did you mean: list?" | 1 | [ ] |
+| Typo "ad" | "Did you mean: add?" | 1 | [ ] |
+| No store exists | "Try running: cprr init" | 1 | [ ] |
+| Corrupt JSON | Error loading store | 1 | [ ] |
+| Permission denied | System error | 1 | [ ] |
+
+* Output Stream Matrix
+
+| Scenario | stdout | stderr | Status |
+|----------+--------+--------+--------|
+| Success output | Data | (empty) | [ ] |
+| Error message | (empty) | Error | [ ] |
+| Verbose mode | Data | [verbose] | [ ] |
+| Help text | Help | (empty) | [ ] |
+| Version | Version | (empty) | [ ] |
+
+* Test Script Template
+
+#+BEGIN_SRC bash :tangle test-cli.sh :shebang "#!/usr/bin/env bash"
+#!/usr/bin/env bash
+# CLI validation test script
+set -euo pipefail
+
+CPRR="${CPRR:-./cprr}"
+PASS=0
+FAIL=0
+
+test_case() {
+    local name="$1"
+    local expected_exit="$2"
+    shift 2
+    local cmd="$*"
+
+    if output=$($cmd 2>&1); then
+        actual_exit=0
+    else
+        actual_exit=$?
+    fi
+
+    if [[ "$actual_exit" -eq "$expected_exit" ]]; then
+        echo "PASS: $name"
+        ((PASS++))
+    else
+        echo "FAIL: $name (expected exit $expected_exit, got $actual_exit)"
+        echo "  cmd: $cmd"
+        echo "  out: $output"
+        ((FAIL++))
+    fi
+}
+
+# Setup
+rm -rf .cprr
+
+# Global flags
+test_case "help flag" 0 $CPRR --help
+test_case "version flag" 0 $CPRR --version
+test_case "no args shows help" 0 $CPRR
+
+# Init
+test_case "init local" 0 $CPRR init --local
+test_case "init exists" 1 $CPRR init --local
+test_case "init force" 0 $CPRR init --local --force --examples
+
+# Add
+test_case "add no args" 1 $CPRR add
+test_case "add title only" 0 $CPRR add "Test hypothesis"
+test_case "add with hypothesis" 0 $CPRR add "Full test" --hypothesis "Expected outcome"
+
+# List
+test_case "list all" 0 $CPRR list
+test_case "list filter" 0 $CPRR list --status open
+
+# Show
+test_case "show exists" 0 $CPRR show 1
+test_case "show not found" 1 $CPRR show 999
+test_case "show invalid" 1 $CPRR show abc
+
+# Next
+test_case "next with hypothesis" 0 $CPRR next 5
+test_case "next no hypothesis" 1 $CPRR next 4
+test_case "next force" 0 $CPRR next 4 --force
+
+# Evidence
+test_case "evidence add" 0 $CPRR evidence 5 "Test observation"
+test_case "evidence no text" 1 $CPRR evidence 5
+
+# Status
+test_case "status set" 0 $CPRR status 4 abandoned
+test_case "status invalid" 1 $CPRR status 4 invalid
+
+# Delete
+test_case "delete exists" 0 $CPRR delete 4
+test_case "delete not found" 1 $CPRR delete 999
+
+# Unknown command
+test_case "unknown command" 1 $CPRR foobar
+test_case "typo suggestion" 1 $CPRR lst
+
+# Cleanup
+rm -rf .cprr
+
+# Summary
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+[[ $FAIL -eq 0 ]]
+#+END_SRC
+
+* Automated Test Checklist
+
+Run with: =make test-cli= (after adding target)
+
+#+BEGIN_SRC makefile :tangle ../Makefile.cli-test
+# Add to Makefile
+test-cli: $(BINARY)
+	@chmod +x docs/test-cli.sh
+	@docs/test-cli.sh
+#+END_SRC
