@@ -1,4 +1,4 @@
-.PHONY: all build test clean lint lint-go lint-org lint-shell install help run tangle detangle worktrees
+.PHONY: all build test clean lint lint-go lint-org lint-shell install help run tangle detangle worktrees worktrees-sync
 
 GO ?= go
 BINARY := cprr
@@ -160,6 +160,9 @@ clean:
 # Git worktrees management
 worktrees:
 	@./scripts/worktrees.sh $(ARGS)
+
+worktrees-sync:
+	@./scripts/worktrees.sh sync
 
 # Dev setup
 dev-deps:
