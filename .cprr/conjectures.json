@@ -1,0 +1,130 @@
+{
+  "conjectures": [
+    {
+      "id": 1,
+      "title": "Caching reduces p99 latency by 50%",
+      "hypothesis": "Adding Redis cache for DB queries will cut tail latency in half",
+      "evidence": [
+        "TLA+ maps well: 5 states (open/testing/confirmed/refuted/abandoned), guards as ENABLED conditions",
+        "Key invariants: confirmed requires hypothesis+2 evidence, refuted requires 1 evidence, abandoned always reachable"
+      ],
+      "status": "testing",
+      "tags": [
+        "performance",
+        "infrastructure"
+      ],
+      "created_at": "2026-02-05T08:49:16.493952-05:00",
+      "updated_at": "2026-02-05T08:49:16.512882-05:00"
+    },
+    {
+      "id": 2,
+      "title": "Dark mode increases engagement",
+      "hypothesis": "Users with dark mode enabled have 10% longer sessions",
+      "evidence": [
+        "A/B test setup with 5000 users per cohort"
+      ],
+      "status": "testing",
+      "tags": [
+        "ux",
+        "experiment"
+      ],
+      "created_at": "2026-02-05T08:49:16.493952-05:00",
+      "updated_at": "2026-02-05T08:49:16.493952-05:00"
+    },
+    {
+      "id": 3,
+      "title": "Null hypothesis: button color doesn't matter",
+      "hypothesis": "Red vs blue CTA button has no significant conversion difference",
+      "evidence": [
+        "n=10000, p=0.73",
+        "conversion: red 3.2%, blue 3.1%"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "ux",
+        "experiment"
+      ],
+      "created_at": "2026-02-05T08:49:16.493952-05:00",
+      "updated_at": "2026-02-05T08:49:16.493952-05:00"
+    },
+    {
+      "id": 4,
+      "title": "State machine is intuitive and passes TLA+ specifications",
+      "hypothesis": "Guards and transitions can be formally verified with TLA+",
+      "evidence": [
+        "TLA+ maps well: 5 states (open/testing/confirmed/refuted/abandoned), guards as ENABLED conditions",
+        "Key invariants: confirmed requires hypothesis+2 evidence, refuted requires 1 evidence, abandoned always reachable"
+      ],
+      "status": "abandoned",
+      "created_at": "2026-02-05T08:49:16.49988-05:00",
+      "updated_at": "2026-02-05T09:25:26.082118-05:00"
+    },
+    {
+      "id": 5,
+      "title": "cprr fills a unique niche not covered by claude-code-tools",
+      "hypothesis": "claude-code-tools focuses on session/env management, not hypothesis tracking with formal guards",
+      "evidence": [
+        "claude-code-tools contains: aichat (session mgmt), tmux-cli (terminal automation), vault (env backup), env-safe (env inspection) - no hypothesis/experiment tracking",
+        "cprr provides: state machine with guards, hypothesis-\u003etesting-\u003econfirmed workflow, evidence requirements - complementary not overlapping"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "comparison",
+        "validation"
+      ],
+      "created_at": "2026-02-05T09:12:26.212618-05:00",
+      "updated_at": "2026-02-05T09:15:28.873607-05:00"
+    },
+    {
+      "id": 6,
+      "title": "cprr methodology aligns with multi-agent debate workflows (Mysti HN discussion)",
+      "hypothesis": "Conjecture-refutation cycle mirrors how multiple agents challenge and synthesize solutions",
+      "evidence": [
+        "Mysti (HN 46365105): multi-agent debate where models challenge each other's approaches - analogous to conjecture/refutation cycle",
+        "Key insight from discussion: 'if a model introduces a bug, it has hard time spotting it, but another model can instantly spot it' - supports systematic hypothesis testing across perspectives"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "methodology",
+        "multi-agent"
+      ],
+      "created_at": "2026-02-05T09:14:12.114779-05:00",
+      "updated_at": "2026-02-05T09:15:30.730542-05:00"
+    },
+    {
+      "id": 7,
+      "title": "cprr can be packaged as an Agent Skills skill",
+      "hypothesis": "SKILL.md + scripts/ structure maps to cprr's CLI and methodology",
+      "evidence": [
+        "SKILL.md created with: overview, workflow, commands, evidence standards, best practices, example session - follows agent-skills pattern",
+        "Structure maps: SKILL.md (instructions) exists, cprr CLI provides scripts/ equivalent via make targets, docs/ contains references/ - minimal viable skill package complete"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "packaging",
+        "skills"
+      ],
+      "created_at": "2026-02-05T09:19:02.885207-05:00",
+      "updated_at": "2026-02-05T09:19:53.343624-05:00"
+    },
+    {
+      "id": 8,
+      "title": "Alloy is better than TLA+ for cprr's small state machines",
+      "hypothesis": "Alloy's relational logic and built-in visualization provide faster iteration for bounded state spaces like cprr's 5-state machine",
+      "evidence": [
+        "Alloy advantages for cprr: (1) relational model fits guard predicates naturally, (2) Analyzer generates counterexamples visually, (3) bounded checking sufficient for 5 states × small evidence counts, (4) no temporal operators needed - guards are structural not temporal",
+        "TLA+ overhead for cprr: (1) temporal logic ([]/\u003c\u003e) overkill for simple guards, (2) TLC model checker designed for distributed systems concurrency, (3) no built-in visualization, (4) steeper learning curve for structural properties",
+        "Alloy spec (cprr.als) is 140 lines: guards as predicates, transitions as relations, invariants as assertions with 'check' - directly maps to cprr's domain model without temporal logic overhead"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "formal-methods",
+        "tooling"
+      ],
+      "created_at": "2026-02-05T09:23:56.602384-05:00",
+      "updated_at": "2026-02-05T09:24:55.471808-05:00"
+    }
+  ],
+  "next_id": 9,
+  "config": {}
+}

@@ -7,8 +7,9 @@ cprr-*
 dist/
 bin/
 
-# Local data store
-.cprr/
+# Local data store - track conjectures.json for portability
+.cprr/*
+!.cprr/conjectures.json
 
 # IDE
 .idea/
