@@ -128,13 +128,18 @@
       "id": 9,
       "title": "Vale is better than custom linters for experiment content validation",
       "hypothesis": "Vale's prose linting + custom vocabulary catches more style issues than bash grep checks, with less maintenance burden",
-      "status": "open",
+      "evidence": [
+        "Created working Vale configuration with custom CPRR style rules (PassiveVoice, WeakClaims, FalsificationRequired). Setup took 30 minutes. Vale catches 9 prose issues in test bad-conjecture.md. Finding: Vale complements lint-experiments.sh - Vale for prose quality, bash for structure.",
+        "PARTIAL REFUTATION: Vale's existence extension cannot check 'file must contain section X' - it fires when tokens ARE found, not missing. Structural checks should remain in lint-experiments.sh. Vale is NOT a replacement for custom linters, but a complement for PROSE QUALITY only.",
+        "REFINED HYPOTHESIS: Original claim 'Vale is better' should be revised to 'Vale complements bash linters'. Vale excels at prose quality (hedging, passive voice, vocabulary), bash excels at structure (file existence, naming). Both tools together provide comprehensive validation. See experiments/003-vale-linting/PROOF.md for details."
+      ],
+      "status": "testing",
       "tags": [
         "tooling",
         "dx"
       ],
       "created_at": "2026-02-05T09:49:58.827624-05:00",
-      "updated_at": "2026-02-05T09:49:58.827624-05:00"
+      "updated_at": "2026-02-05T15:09:41.128515484-05:00"
     },
     {
       "id": 10,
