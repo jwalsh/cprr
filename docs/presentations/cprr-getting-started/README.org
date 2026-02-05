@@ -1,0 +1,336 @@
+#+TITLE: cprr: Getting Started Guide
+#+SUBTITLE: Conjecture & Experiment Tracker
+#+AUTHOR: cprr team
+#+DATE: 2026-02-05
+#+OPTIONS: toc:2 num:nil
+
+* Introduction
+
+** What is cprr?
+
+*cprr* (Conjecture-Proposition-Refutation-Resolution) is a CLI tool for
+tracking hypotheses through a rigorous state machine with guard conditions.
+
+#+BEGIN_QUOTE
+"Track what you believe, gather evidence, reach conclusions."
+#+END_QUOTE
+
+** The Problem
+
+Software teams often:
+- Make assumptions without tracking them
+- Skip validation of hypotheses
+- Lack rigor in experiment methodology
+- Lose institutional knowledge of what was tried
+
+** The Solution
+
+A lightweight CLI that enforces rigor:
+- State machine prevents premature conclusions
+- Guards require evidence before advancement
+- JSON storage for portability and debugging
+- Zero dependencies, single binary
+
+* Quick Start
+
+** Installation
+
+#+BEGIN_SRC bash
+# Via go install
+go install github.com/jwalsh/cprr@latest
+
+# Or build from source
+git clone https://github.com/jwalsh/cprr
+cd cprr
+make build
+#+END_SRC
+
+** First Steps
+
+#+BEGIN_SRC bash
+# Initialize (global store in ~/.cprr)
+cprr init --examples
+
+# Or project-local store
+cprr init --local
+
+# Create a conjecture
+cprr add "Redis caching improves latency" \
+    --hypothesis "Adding cache layer reduces p99 by 50%"
+
+# View it
+cprr show 1
+
+# Advance to testing (requires hypothesis)
+cprr next 1
+
+# Add evidence
+cprr evidence 1 "Baseline p99: 450ms, n=10000"
+cprr evidence 1 "With cache p99: 180ms, n=10000"
+
+# Advance to confirmed (requires 2+ evidence)
+cprr next 1
+
+# List all
+cprr list
+#+END_SRC
+
+* Core Concepts
+
+** State Machine
+
+#+BEGIN_SRC
+  ┌────────────────────────────────────────────┐
+  │                                            │
+  ▼                                            │
+┌──────┐    hypothesis    ┌─────────┐   2+ ev  │  ┌───────────┐
+│ open │ ───────────────▶ │ testing │ ───────────▶│ confirmed │
+└──────┘                  └─────────┘              └───────────┘
+                               │
+                               │ 1+ evidence
+                               ▼
+                          ┌─────────┐
+                          │ refuted │
+                          └─────────┘
+
+  Any state ──────────────▶ abandoned (escape hatch)
+#+END_SRC
+
+** Guards
+
+Guards are preconditions that must be satisfied before state transitions:
+
+| Transition | Guard | Requirement |
+|------------+-------+-------------|
+| open → testing | =hypothesis_required= | Hypothesis must be set |
+| testing → confirmed | =min_evidence= | At least 2 evidence pieces |
+| testing → confirmed | =hypothesis_required= | Hypothesis must be set |
+| testing → refuted | =min_evidence= | At least 1 evidence piece |
+| * → abandoned | /none/ | Always allowed |
+
+** Why Guards?
+
+1. *Prevent premature conclusions* - Can't confirm without evidence
+2. *Enforce methodology* - Hypothesis before testing
+3. *Audit trail* - Evidence is recorded
+4. *Formal verifiability* - Maps to TLA+ specifications
+
+* Motivations
+
+** Scientific Method in Software
+
+| Scientific Method | cprr Equivalent |
+|-------------------+-----------------|
+| Hypothesis | =cprr add --hypothesis= |
+| Experiment | Status: =testing= |
+| Data collection | =cprr evidence= |
+| Conclusion | =confirmed= / =refuted= |
+| Abandon | =abandoned= |
+
+** Technical Debt Tracking
+
+Track assumptions that become technical debt:
+
+#+BEGIN_SRC bash
+cprr add "Monolith is sufficient for current scale" \
+    --hypothesis "Single deployment handles 1000 RPS"
+
+# Later, when it fails...
+cprr evidence 1 "Hit 800 RPS ceiling, DB connections exhausted"
+cprr status 1 refuted
+#+END_SRC
+
+** A/B Test Documentation
+
+#+BEGIN_SRC bash
+cprr add "Dark mode increases engagement" \
+    --hypothesis "10% longer session duration" \
+    -t "ux,experiment"
+
+cprr next 1
+cprr evidence 1 "Cohort: 5000 users each, 2 weeks"
+cprr evidence 1 "Results: +12% session duration, p=0.03"
+cprr next 1  # -> confirmed
+#+END_SRC
+
+* History & Background
+
+** Inspiration
+
+- *Popper's Falsificationism* - Conjectures and refutations
+- *TLA+ Methodology* - State machines with invariants
+- *Unix Philosophy* - Small, composable tools
+- *Scientific Method* - Hypothesis-driven development
+
+** Prior Art
+
+| Tool | Focus | Difference |
+|------+-------+------------|
+| Jupyter | Interactive exploration | cprr is CLI-first, persistent |
+| Lab notebooks | Manual documentation | cprr enforces structure |
+| Issue trackers | Task management | cprr is hypothesis-focused |
+| Feature flags | Deployment control | cprr tracks validation |
+
+** Etymology
+
+*CPRR*: Conjecture-Proposition-Refutation-Resolution
+
+Inspired by Karl Popper's epistemological framework where knowledge
+advances through bold conjectures and attempts at refutation.
+
+* Recommended Reading
+
+** Philosophy of Science
+
+- Popper, K. (1963). /Conjectures and Refutations/
+- Kuhn, T. (1962). /The Structure of Scientific Revolutions/
+- Lakatos, I. (1976). /Proofs and Refutations/
+
+** Formal Methods
+
+- Lamport, L. /Specifying Systems/ (TLA+)
+- Hillel Wayne. /Practical TLA+/
+- Jackson, D. /Software Abstractions/ (Alloy)
+
+** Software Engineering
+
+- Humble & Farley. /Continuous Delivery/
+- Forsgren et al. /Accelerate/
+- Winters et al. /Software Engineering at Google/
+
+** CLI Design
+
+- https://clig.dev/ - Command Line Interface Guidelines
+- https://www.lucasfcosta.com/blog/ux-patterns-cli-tools
+
+* Comparison: Tools & Methodologies
+
+** Experiment Tracking Tools
+
+| Tool | Type | Best For |
+|------+------+----------|
+| *cprr* | CLI | Lightweight hypothesis tracking |
+| MLflow | Platform | ML experiment tracking |
+| Weights & Biases | SaaS | ML metrics and artifacts |
+| DVC | Git-based | Data versioning |
+| Sacred | Python | Experiment configuration |
+
+** Formal Verification Tools
+
+| Tool | Approach | Use Case |
+|------+----------+----------|
+| TLA+ | Temporal logic | Distributed systems |
+| Alloy | Relational logic | Data modeling |
+| Z3 | SMT solving | Constraint satisfaction |
+| SPIN | Model checking | Protocol verification |
+| Coq | Proof assistant | Verified software |
+
+** Methodologies
+
+| Methodology | Focus | cprr Mapping |
+|-------------+-------+--------------|
+| Hypothesis-Driven Dev | Product discovery | Core workflow |
+| Test-Driven Dev | Code correctness | Evidence gathering |
+| Lean Startup | Build-Measure-Learn | Conjecture cycle |
+| Scientific Method | Knowledge creation | State machine |
+| OODA Loop | Decision making | State transitions |
+
+* Protocols
+
+** Creating Good Conjectures
+
+1. *Be specific* - "Caching improves latency" → "Redis cache reduces p99 by 50%"
+2. *Be falsifiable* - Must be possible to disprove
+3. *Set boundaries* - Time, scope, metrics
+4. *Tag appropriately* - Enable filtering and analysis
+
+** Evidence Standards
+
+| Level | Description | Example |
+|-------+-------------+---------|
+| Anecdotal | Single observation | "Seemed faster" |
+| Measured | Quantified observation | "p99: 180ms" |
+| Statistical | Significance tested | "p=0.03, n=10000" |
+| Replicated | Multiple trials | "3 runs, consistent" |
+
+** When to Abandon
+
+- Circumstances changed
+- Better approach discovered
+- Resource constraints
+- No longer relevant
+
+#+BEGIN_SRC bash
+cprr status 1 abandoned
+# No guard - always allowed (escape hatch)
+#+END_SRC
+
+* Advanced Usage
+
+** Local vs Global Store
+
+#+BEGIN_SRC bash
+# Global (default): ~/.cprr/
+cprr init
+
+# Project-local: ./.cprr/
+cprr init --local
+
+# Local takes precedence when present
+#+END_SRC
+
+** Filtering and Queries
+
+#+BEGIN_SRC bash
+# By status
+cprr list --status open
+cprr list --status testing
+cprr list --status confirmed
+
+# By tag
+cprr list --tag performance
+cprr list --tag ux
+
+# Combined
+cprr list --status testing --tag experiment
+#+END_SRC
+
+** Bypassing Guards (Not Recommended)
+
+#+BEGIN_SRC bash
+# Force transition despite guard violations
+cprr next 1 --force
+
+# Set status directly (bypasses all guards)
+cprr status 1 confirmed
+
+# Dry run to preview
+cprr next 1 --dry-run
+#+END_SRC
+
+** Integration with Other Tools
+
+#+BEGIN_SRC bash
+# Export to JSON
+cat ~/.cprr/conjectures.json | jq '.conjectures[] | select(.status == "confirmed")'
+
+# Beads integration
+bd add "Validate caching hypothesis"
+# ... work ...
+./cprr evidence 1 "CPRR-a3f2dd: Completed validation"
+#+END_SRC
+
+* Next Steps
+
+1. *Install cprr*: =go install github.com/jwalsh/cprr@latest=
+2. *Initialize*: =cprr init --examples=
+3. *Explore*: =cprr list= and =cprr show 1=
+4. *Create your first conjecture*: =cprr add "..." --hypothesis "..."=
+5. *Read the docs*: =cprr --help= and =cprr <cmd> --help=
+
+* Resources
+
+- Repository: https://github.com/jwalsh/cprr
+- Issues: https://github.com/jwalsh/cprr/issues
+- Documentation: =docs/= directory
+- CLI Guidelines: https://clig.dev/
