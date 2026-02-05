@@ -1,0 +1,15 @@
+Emacs Integration:
+- Transient-based UI for cprr CLI
+- Experiment directory structure support
+- Phase document templates (CONJECTURE.md, PROOF.md, etc.)
+- bd/beads integration for issue tracking
+
+Methodology: Lakatos-informed (Proofs and Refutations)
+- Conjectures are provisional
+- Proofs can be challenged
+- Refutations drive refinement
+
+Comparison Analysis (Conjecture #5):
+- claude-code-tools: session mgmt, terminal automation, env safety
+- cprr: hypothesis tracking with state machine guards
+- Complementary, not overlapping tooling
