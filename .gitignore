@@ -42,3 +42,16 @@ vendor/
 
 # Debug
 __debug_bin*
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+
+# Credentials
+*.pem
+*.key
+credentials.json
+secrets.yaml
