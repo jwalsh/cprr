@@ -333,8 +333,25 @@
       "status": "confirmed",
       "created_at": "2026-02-05T12:26:13.699918887-05:00",
       "updated_at": "2026-02-05T12:26:36.450944031-05:00"
+    },
+    {
+      "id": 24,
+      "title": "External agents detect in-flight work via branches and worktrees/",
+      "hypothesis": "When agents clone/pull repo, they can see WIP branches and optionally check them out to worktrees/ for parallel work without conflicts",
+      "evidence": [
+        "Demonstrated: spawned agent to work on CPRR-fob in feat/CPRR-fob-alloy-validation branch - work isolated, pushes to origin for other agents to discover",
+        "Discovery mechanism: git fetch --all shows remote branches, agents can git worktree add ../cprr-CPRR-fob origin/feat/CPRR-fob-alloy-validation to work in parallel without checkout conflicts",
+        "Correction: worktrees/ is gitignored in pwd, so git worktree add worktrees/CPRR-fob origin/feat/... keeps isolation local while branches are shared via origin"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "collaboration",
+        "workflow"
+      ],
+      "created_at": "2026-02-05T12:29:14.264207-05:00",
+      "updated_at": "2026-02-05T12:31:38.820187-05:00"
     }
   ],
-  "next_id": 24,
+  "next_id": 25,
   "config": {}
 }
