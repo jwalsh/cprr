@@ -1,0 +1,12 @@
+# CPRR.ConjectureStructure - DISABLED
+# Vale existence rules don't work well for "must contain section" checks
+# Use lint-experiments.sh for structural validation instead
+#
+# This file kept for documentation of what was tried
+
+extends: existence
+level: suggestion
+scope: raw
+message: "Ignore this - structural checks should use lint-experiments.sh"
+tokens:
+  - "DISABLED_RULE_PLACEHOLDER"

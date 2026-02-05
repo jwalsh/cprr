@@ -1,0 +1,12 @@
+# CPRR.FalsificationRequired - Ensure falsifiable language exists
+# Good conjectures must specify conditions for refutation
+
+extends: existence
+message: "Good: Found falsification language '%s'"
+level: suggestion
+scope: raw
+tokens:
+  - refuted
+  - falsified
+  - disproved
+  - proven wrong

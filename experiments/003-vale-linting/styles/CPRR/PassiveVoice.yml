@@ -1,0 +1,14 @@
+# CPRR.PassiveVoice - Discourage passive voice in technical docs
+# Active voice is clearer for hypothesis statements
+
+extends: existence
+message: "Consider using active voice instead of '%s'"
+level: suggestion
+scope: sentence
+tokens:
+  - was implemented
+  - were tested
+  - is demonstrated
+  - are validated
+  - has been
+  - have been

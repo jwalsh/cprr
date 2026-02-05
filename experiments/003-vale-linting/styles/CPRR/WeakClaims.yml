@@ -1,0 +1,15 @@
+# CPRR.WeakClaims - Flag hedging language in hypothesis statements
+# Conjectures should be clear and falsifiable
+
+extends: existence
+message: "Avoid weak/hedging language '%s' - be specific and falsifiable"
+level: suggestion
+scope: sentence
+tokens:
+  - might work
+  - could possibly
+  - may or may not
+  - sort of
+  - kind of
+  - probably
+  - maybe

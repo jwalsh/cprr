@@ -1,0 +1,22 @@
+# CPRR domain terminology - accepted terms
+# These won't trigger spelling warnings
+
+CPRR
+conjecture
+conjectures
+falsification
+falsifiable
+refutation
+refuted
+refinement
+bead
+beads
+EDD
+TDD
+ADR
+kebab-case
+Makefile
+QuickCheck
+Hypothesis
+LLM
+CLI

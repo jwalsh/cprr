@@ -1,0 +1,12 @@
+# CPRR.RefinementStructure - DISABLED
+# Vale existence rules fire when content IS found, not when missing
+# Use lint-experiments.sh for "must have section" checks
+#
+# This file documents what was attempted
+
+extends: existence
+level: suggestion
+scope: raw
+message: "Ignore - structural checks delegated to lint-experiments.sh"
+tokens:
+  - "DISABLED_RULE_PLACEHOLDER"
