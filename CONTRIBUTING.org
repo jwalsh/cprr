@@ -20,7 +20,7 @@ cd cprr
 go build -o cprr .
 
 # Run locally
-./cprr init --local --examples
+./cprr init --examples
 ./cprr list
 
 # Run tests
@@ -80,7 +80,7 @@ go test -race ./...
 rm -rf ~/.cprr .cprr
 
 # Test init
-./cprr init --local --examples
+./cprr init --examples
 ./cprr list
 
 # Test state machine guards

@@ -376,14 +376,19 @@ func main() {
 }
 
 func cmdInit(args []string) {
-	var useLocal, withExamples, force, showHelp bool
+	// Local-first: default to project-local .cprr/
+	useLocal := true
+	var useGlobal, withExamples, force, showHelp bool
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "-h", "--help":
 			showHelp = true
 		case "--local", "-l":
-			useLocal = true
+			useLocal = true // explicit local (default anyway)
+		case "--global", "-g":
+			useGlobal = true
+			useLocal = false
 		case "--examples", "-e":
 			withExamples = true
 		case "--force", "-f":
@@ -395,30 +400,39 @@ func cmdInit(args []string) {
 		fmt.Print(`Usage: cprr init [flags]
 
 Initialize a new cprr store for tracking conjectures.
+Default: project-local store in ./.cprr (recommended for git tracking)
 
 Flags:
-  -l, --local      Store in ./.cprr (project-local) instead of ~/.cprr
   -e, --examples   Seed with example conjectures
+  -g, --global     Store in ~/.cprr (user-wide, not recommended)
   -f, --force      Overwrite existing store
   -h, --help       Show this help
 
 Examples:
-  cprr init                    # Global store in ~/.cprr
-  cprr init --local            # Project store in ./.cprr
-  cprr init --local --examples # With sample data
+  cprr init              # Project store in ./.cprr (default)
+  cprr init --examples   # With sample data
+  cprr init --global     # User-wide store in ~/.cprr
 `)
 		return
 	}
 
+	if useGlobal {
+		useLocal = false
+	}
 	localMode = useLocal
 	targetFile := dataFile()
 
 	verbose("target file: %s", targetFile)
 
-	if _, err := os.Stat(targetFile); err == nil && !force {
-		fmt.Fprintf(os.Stderr, "error: store already exists at %s\n", targetFile)
-		fmt.Fprintf(os.Stderr, "\nTo overwrite, run: cprr init --force\n")
-		os.Exit(1)
+	// Idempotent: skip if exists (unless --force)
+	if _, err := os.Stat(targetFile); err == nil {
+		if force {
+			// Will overwrite below
+		} else {
+			fmt.Printf("Store already exists at %s\n", targetFile)
+			fmt.Println("Nothing to do. Use --force to overwrite.")
+			return // Exit 0, not error
+		}
 	}
 
 	store := &Store{
@@ -1159,27 +1173,49 @@ No arguments required. Safe to run multiple times.
 		}
 	}
 
-	// Create a demo conjecture
-	demoID := store.NextID
-	demo := Conjecture{
-		ID:         demoID,
-		Title:      "Quickstart demo conjecture",
-		Hypothesis: "This demo will complete in <5 seconds",
-		Status:     StatusOpen,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+	// Idempotent: check if demo already exists
+	var demoID int
+	var existingDemo *Conjecture
+	for i := range store.Conjectures {
+		if store.Conjectures[i].Title == "Quickstart demo conjecture" {
+			existingDemo = &store.Conjectures[i]
+			demoID = existingDemo.ID
+			break
+		}
 	}
-	store.Conjectures = append(store.Conjectures, demo)
-	store.NextID++
-	store.save()
 
-	fmt.Printf(`
+	if existingDemo != nil {
+		// Demo exists - show it without creating new one
+		fmt.Printf(`
+  Existing: #%d "Quickstart demo conjecture"
+  Status:   %s
+
+  # Demo conjecture already exists (idempotent)
+  $ cprr show %d
+`, demoID, existingDemo.Status, demoID)
+	} else {
+		// Create a demo conjecture
+		demoID = store.NextID
+		demo := Conjecture{
+			ID:         demoID,
+			Title:      "Quickstart demo conjecture",
+			Hypothesis: "This demo will complete in <5 seconds",
+			Status:     StatusOpen,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
+		store.Conjectures = append(store.Conjectures, demo)
+		store.NextID++
+		store.save()
+
+		fmt.Printf(`
   Created: #%d "Quickstart demo conjecture"
   Status:  open
 
   # Advance to testing (hypothesis already set)
   $ cprr next %d
 `, demoID, demoID)
+	}
 
 	// Advance to testing
 	c := findByID(store, demoID)

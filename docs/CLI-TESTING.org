@@ -309,10 +309,12 @@ test_case "help flag" 0 $CPRR --help
 test_case "version flag" 0 $CPRR --version
 test_case "no args shows help" 0 $CPRR
 
-# Init
-test_case "init local" 0 $CPRR init --local
-test_case "init exists" 1 $CPRR init --local
-test_case "init force" 0 $CPRR init --local --force --examples
+# Init (local by default, idempotent)
+test_case "init default" 0 $CPRR init
+test_case "init exists" 0 $CPRR init              # idempotent: exits 0
+test_case "init examples" 0 $CPRR init --examples
+test_case "init force" 0 $CPRR init --force --examples
+test_case "init global" 0 $CPRR init --global     # not recommended
 
 # Add
 test_case "add no args" 1 $CPRR add

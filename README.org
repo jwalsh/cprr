@@ -17,7 +17,7 @@ go install github.com/jwalsh/cprr@latest
 
 #+BEGIN_SRC bash
 # Initialize with examples
-cprr init --local --examples
+cprr init --examples
 
 # Create a new conjecture
 cprr add "Redis improves latency" -h "p99 drops 50%" -t "perf,infra"

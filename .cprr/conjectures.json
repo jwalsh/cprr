@@ -259,8 +259,54 @@
       ],
       "created_at": "2026-02-05T11:58:58.804238-05:00",
       "updated_at": "2026-02-05T11:59:57.94877-05:00"
+    },
+    {
+      "id": 19,
+      "title": "Quickstart demo conjecture",
+      "hypothesis": "This demo will complete in \u003c5 seconds",
+      "evidence": [
+        "Demo evidence 1: command executed",
+        "Demo evidence 2: output rendered",
+        "Demo evidence 1: command executed",
+        "Demo evidence 2: output rendered"
+      ],
+      "status": "confirmed",
+      "created_at": "2026-02-05T12:10:52.432931-05:00",
+      "updated_at": "2026-02-05T12:13:44.06291-05:00"
+    },
+    {
+      "id": 20,
+      "title": "Core docs, testing docs, and implementation are aligned",
+      "hypothesis": "README, CONTRIBUTING, CLI-TESTING, SKILL.md all show consistent flags and behaviors matching main.go implementation",
+      "evidence": [
+        "Updated: README.org, CONTRIBUTING.org, CLI-TESTING.org all use 'cprr init --examples' (local default), init tests show exit 0 for idempotent behavior",
+        "Verified: main.go cmdInit defaults useLocal=true, help shows --global as opt-in, quickstart is idempotent (skips existing demo)"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "documentation",
+        "validation"
+      ],
+      "created_at": "2026-02-05T12:14:57.73464-05:00",
+      "updated_at": "2026-02-05T12:15:22.601455-05:00"
+    },
+    {
+      "id": 21,
+      "title": "cprr honors --global selection from initialization",
+      "hypothesis": "If initialized with --global, subsequent cprr commands use ~/.cprr unless local .cprr/ exists (local-first precedence)",
+      "evidence": [
+        "Verified: --global creates ~/.cprr, subsequent commands use it when no local .cprr/ exists. Local-first: if .cprr/ exists in pwd, it takes precedence regardless of global init",
+        "cprr doctor shows both stores with (ACTIVE) marker on whichever is in use - user can see which store is active and why"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "behavior",
+        "design"
+      ],
+      "created_at": "2026-02-05T12:15:49.588519-05:00",
+      "updated_at": "2026-02-05T12:16:27.938303-05:00"
     }
   ],
-  "next_id": 19,
+  "next_id": 22,
   "config": {}
 }
