@@ -378,8 +378,24 @@
       ],
       "created_at": "2026-02-05T12:57:18.034518-05:00",
       "updated_at": "2026-02-05T12:58:01.378489-05:00"
+    },
+    {
+      "id": 27,
+      "title": "Stakeholders can understand project state via experiments/ and CLI",
+      "hypothesis": "experiments/README.org indexes work, cprr list shows conjectures, bd list shows issues - provides reasonable overview without reading code",
+      "evidence": [
+        "CLI provides: cprr list (22 conjectures with status), bd list (7 open issues), experiments/README.org (2 experiments indexed with status)",
+        "Worktrees sync shows 5 in-flight branches - stakeholder sees parallel work without reading code. Combined view: experiments + conjectures + issues + branches = full project state"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "dx",
+        "stakeholder"
+      ],
+      "created_at": "2026-02-05T17:00:03.673206-05:00",
+      "updated_at": "2026-02-05T17:00:37.01234-05:00"
     }
   ],
-  "next_id": 27,
+  "next_id": 28,
   "config": {}
 }
