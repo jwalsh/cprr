@@ -394,8 +394,24 @@
       ],
       "created_at": "2026-02-05T17:00:03.673206-05:00",
       "updated_at": "2026-02-05T17:00:37.01234-05:00"
+    },
+    {
+      "id": 28,
+      "title": "gmake overview-gist provides point-in-time project summary",
+      "hypothesis": "A gist-based summary (conjectures, issues, experiments, branches) is useful for cprr dev but optional for external repos adopting the methodology",
+      "evidence": [
+        "Implemented scripts/overview-gist.sh - creates private gist with conjectures, issues, experiments, branches. Uses Makefile fallthrough pattern, not core to cprr.",
+        "Optional for external repos: script lives in scripts/, not bundled with cprr binary. Other repos can adopt cprr methodology without this tooling."
+      ],
+      "status": "confirmed",
+      "tags": [
+        "tooling",
+        "dx"
+      ],
+      "created_at": "2026-02-05T17:02:21.727032-05:00",
+      "updated_at": "2026-02-05T17:03:16.710624-05:00"
     }
   ],
-  "next_id": 28,
+  "next_id": 29,
   "config": {}
 }
