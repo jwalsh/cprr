@@ -1,0 +1,205 @@
+#+TITLE: Contributing to cprr
+#+AUTHOR: jwalsh
+
+* Prerequisites
+
+| Tool   | Version | Purpose              |
+|--------+---------+----------------------|
+| Go     | 1.21+   | Build and test       |
+| git    | 2.x     | Version control      |
+| gmake  | 4.x     | Build automation     |
+
+* Local Development Setup
+
+#+BEGIN_SRC bash
+# Clone
+git clone https://github.com/jwalsh/cprr.git
+cd cprr
+
+# Build
+go build -o cprr .
+
+# Run locally
+./cprr init --local --examples
+./cprr list
+
+# Run tests
+go test -v ./...
+
+# Install to GOPATH/bin
+go install .
+#+END_SRC
+
+* Project Structure
+
+#+BEGIN_SRC
+cprr/
+├── main.go           # CLI entry point, commands, state machine
+├── go.mod            # Module definition
+├── .gitignore        # Build artifacts
+├── README.org        # User documentation
+└── CONTRIBUTING.org  # This file
+#+END_SRC
+
+* Build Commands
+
+#+BEGIN_SRC bash
+# Development build
+go build -o cprr .
+
+# Release build (stripped, optimized)
+go build -ldflags="-s -w" -o cprr .
+
+# Cross-compile
+GOOS=linux GOARCH=amd64 go build -o cprr-linux-amd64 .
+GOOS=darwin GOARCH=arm64 go build -o cprr-darwin-arm64 .
+GOOS=windows GOARCH=amd64 go build -o cprr-windows-amd64.exe .
+
+# Check for issues
+go vet ./...
+go fmt ./...
+#+END_SRC
+
+* Testing
+
+#+BEGIN_SRC bash
+# Run all tests
+go test -v ./...
+
+# Run with coverage
+go test -cover ./...
+
+# Run with race detector
+go test -race ./...
+#+END_SRC
+
+* Manual Testing Checklist
+
+#+BEGIN_SRC bash
+# Clean slate
+rm -rf ~/.cprr .cprr
+
+# Test init
+./cprr init --local --examples
+./cprr list
+
+# Test state machine guards
+./cprr add "No hypothesis"
+./cprr next 4                    # Should fail: missing hypothesis
+
+./cprr add "With hypothesis" -h "Expected outcome"
+./cprr next 5                    # Should succeed: open → testing
+./cprr next 5                    # Should fail: missing evidence
+
+./cprr evidence 5 "First observation"
+./cprr next 5                    # Should fail: need 2+ evidence
+
+./cprr evidence 5 "Second observation"
+./cprr next 5                    # Should succeed: testing → confirmed
+
+# Test dry-run
+./cprr status 5 testing
+./cprr next 5 --dry-run
+
+# Test force bypass
+./cprr status 5 open
+./cprr next 5 --force            # Bypasses hypothesis guard
+
+# Cleanup
+rm -rf .cprr
+#+END_SRC
+
+* Commit Guidelines
+
+Use [[https://www.conventionalcommits.org/][conventional commits]]:
+
+#+BEGIN_SRC
+feat: add new command
+fix: correct state transition bug
+docs: update README
+refactor: extract guard logic
+test: add state machine tests
+chore: update dependencies
+#+END_SRC
+
+Include co-author trailer:
+
+#+BEGIN_SRC bash
+git commit -m "feat: add refute command" \
+  --trailer "Co-Authored-By: Your Name <email@example.com>"
+#+END_SRC
+
+* Adding New Guards
+
+Guards are defined in =main.go=:
+
+#+BEGIN_SRC go
+var transitions = []Transition{
+    {
+        From: StatusTesting,
+        To:   StatusConfirmed,
+        Guards: []Guard{
+            {
+                Name:    "min_evidence",
+                Check:   func(c *Conjecture) bool { return len(c.Evidence) >= 2 },
+                Message: "minimum 2 pieces of evidence required",
+            },
+        },
+    },
+}
+#+END_SRC
+
+To add a new guard:
+
+1. Define the =Check= function (returns =true= if guard passes)
+2. Add descriptive =Name= and =Message=
+3. Add to appropriate transition's =Guards= slice
+4. Test with =cprr next <id>= to verify violation message
+
+* Adding New Commands
+
+1. Add case to =main()= switch
+2. Implement =cmdFoo(store *Store, args []string)=
+3. Update =usage()= help text
+4. Add to README.org and this file
+
+* State Machine Diagram
+
+#+BEGIN_SRC
+                    ┌─────────────────────────────────────┐
+                    │                                     │
+                    ▼                                     │
+              ┌──────────┐                                │
+              │   open   │                                │
+              └────┬─────┘                                │
+                   │ [hypothesis]                         │
+                   ▼                                      │
+              ┌──────────┐                                │
+              │ testing  │────────────────────────────────┤
+              └────┬─────┘                                │
+                   │                                      │
+         ┌─────────┴─────────┐                            │
+         │ [2+ evidence]     │ [1+ evidence]              │
+         ▼                   ▼                            │
+   ┌───────────┐       ┌──────────┐                       │
+   │ confirmed │       │ refuted  │                       │
+   └─────┬─────┘       └────┬─────┘                       │
+         │                  │                             │
+         └──────────────────┴─────────────────────────────┘
+                            │
+                            ▼
+                     ┌───────────┐
+                     │ abandoned │
+                     └───────────┘
+#+END_SRC
+
+* Release Process
+
+#+BEGIN_SRC bash
+# Tag release
+git tag -a v0.1.0 -m "Initial release"
+git push origin v0.1.0
+
+# Users can then install via:
+go install github.com/jwalsh/cprr@v0.1.0
+#+END_SRC
