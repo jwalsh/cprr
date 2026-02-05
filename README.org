@@ -1,0 +1,88 @@
+#+TITLE: cprr - Conjecture & Experiment Tracker
+#+AUTHOR: jwalsh
+
+[[https://img.shields.io/badge/status-experimental-orange.svg]]
+[[https://img.shields.io/badge/language-Go-00ADD8.svg]]
+[[https://img.shields.io/badge/license-MIT-blue.svg]]
+
+Track hypotheses through a rigorous state machine with guard conditions.
+
+* Installation
+
+#+BEGIN_SRC bash
+go install github.com/jwalsh/cprr@latest
+#+END_SRC
+
+* Quickstart
+
+#+BEGIN_SRC bash
+# Initialize with examples
+cprr init --local --examples
+
+# Create a new conjecture
+cprr add "Redis improves latency" -h "p99 drops 50%" -t "perf,infra"
+
+# View state machine progress
+cprr show 1
+
+# Advance through states (guards enforced)
+cprr next 1              # open → testing (requires hypothesis)
+cprr evidence 1 "baseline: 450ms"
+cprr evidence 1 "with cache: 180ms"
+cprr next 1              # testing → confirmed (requires 2+ evidence)
+#+END_SRC
+
+* State Machine
+
+#+BEGIN_SRC
+  open ──[hypothesis]──▶ testing ──[2+ evidence]──▶ confirmed
+                              │
+                              └──[1+ evidence]──▶ refuted
+
+  Any state can transition to 'abandoned' (escape hatch)
+#+END_SRC
+
+** Guards
+
+| Transition           | Guard                    | Requirement                     |
+|----------------------+--------------------------+---------------------------------|
+| open → testing       | =hypothesis_required=    | Hypothesis must be set          |
+| testing → confirmed  | =min_evidence=           | At least 2 pieces of evidence   |
+| testing → confirmed  | =hypothesis_required=    | Hypothesis must be set          |
+| testing → refuted    | =min_evidence=           | At least 1 piece of evidence    |
+| * → abandoned        | /none/                   | Always allowed (escape hatch)   |
+
+* Commands
+
+| Command                     | Description                            |
+|-----------------------------+----------------------------------------|
+| =cprr init [flags]=         | Initialize store                       |
+| =cprr add <title> [flags]=  | Create conjecture                      |
+| =cprr list [flags]=         | List conjectures                       |
+| =cprr show <id>=            | Show details + state machine position  |
+| =cprr next <id>=            | Advance state (guards enforced)        |
+| =cprr evidence <id> <text>= | Add evidence                           |
+| =cprr status <id> <status>= | Set status directly (bypasses guards)  |
+| =cprr delete <id>=          | Delete conjecture                      |
+
+** Init Flags
+
+| Flag         | Description                        |
+|--------------+------------------------------------|
+| =--local=    | Use =./.cprr= instead of =~/.cprr= |
+| =--examples= | Seed with example conjectures      |
+| =--force=    | Overwrite existing store           |
+
+** Next Flags
+
+| Flag        | Description                          |
+|-------------+--------------------------------------|
+| =--force=   | Skip guard checks (not recommended)  |
+| =--dry-run= | Preview transition without executing |
+
+* Data Storage
+
+- Global: =~/.cprr/conjectures.json=
+- Local: =./.cprr/conjectures.json= (with =--local= flag)
+
+Local stores take precedence when present in the working directory.
