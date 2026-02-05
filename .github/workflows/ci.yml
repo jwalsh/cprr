@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-go:
+    name: Lint Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go fmt check
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Go files not formatted:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+
+  lint-shell:
+    name: Lint Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find shell files
+        id: find-shell
+        run: |
+          files=$(find . -name '*.sh' -type f | tr '\n' ' ')
+          echo "files=$files" >> $GITHUB_OUTPUT
+          if [ -z "$files" ]; then
+            echo "No shell files found"
+          fi
+
+      - name: ShellCheck
+        if: steps.find-shell.outputs.files != ''
+        uses: ludeeus/action-shellcheck@master
+
+  lint-org:
+    name: Lint Org
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check org file headers
+        run: |
+          status=0
+          for f in $(find . -name '*.org' -type f); do
+            echo "Checking: $f"
+            if ! head -1 "$f" | grep -q '^#+TITLE:'; then
+              echo "  ERROR: missing #+TITLE header"
+              status=1
+            fi
+          done
+          exit $status
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint-go]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -v ./...
+
+  build-matrix:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [lint-go]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -v ./...
