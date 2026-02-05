@@ -362,8 +362,24 @@
       "status": "confirmed",
       "created_at": "2026-02-05T12:46:50.639333727-05:00",
       "updated_at": "2026-02-05T12:57:24.83530889-05:00"
+    },
+    {
+      "id": 26,
+      "title": "cprr init --help aligns with README.org Init Flags",
+      "hypothesis": "Init flags documented in README match implementation: --examples, --global, --force",
+      "evidence": [
+        "Mismatch found: README shows --local (now default), missing --global. Help shows: -e/--examples, -g/--global, -f/--force, -h/--help",
+        "Fixed: README now shows --examples, --global, --force with note that local is default. Aligns with init --help output."
+      ],
+      "status": "confirmed",
+      "tags": [
+        "documentation",
+        "validation"
+      ],
+      "created_at": "2026-02-05T12:57:18.034518-05:00",
+      "updated_at": "2026-02-05T12:58:01.378489-05:00"
     }
   ],
-  "next_id": 26,
+  "next_id": 27,
   "config": {}
 }

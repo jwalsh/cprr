@@ -67,11 +67,13 @@ cprr next 1              # testing → confirmed (requires 2+ evidence)
 
 ** Init Flags
 
-| Flag         | Description                        |
-|--------------+------------------------------------|
-| =--local=    | Use =./.cprr= instead of =~/.cprr= |
-| =--examples= | Seed with example conjectures      |
-| =--force=    | Overwrite existing store           |
+| Flag         | Description                                |
+|--------------+--------------------------------------------|
+| =--examples= | Seed with example conjectures              |
+| =--global=   | Use =~/.cprr= instead of =./.cprr= (default) |
+| =--force=    | Overwrite existing store                   |
+
+Note: Local =./.cprr= is now the default (recommended for git tracking).
 
 ** Next Flags
 
