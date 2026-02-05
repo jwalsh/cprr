@@ -57,6 +57,66 @@ Read it completely before writing any code.
 
 ---
 
+## Parallel Work with Worktrees
+
+This repo supports multiple agents working in parallel using git worktrees.
+The `worktrees/` directory is gitignored, so each agent's working copy stays local.
+
+### Setup
+
+```bash
+# Discover available work branches
+git fetch --all
+git branch -r | grep feat/
+
+# Create a worktree for a specific bead/feature
+git worktree add worktrees/CPRR-fob origin/feat/CPRR-fob-alloy-validation
+
+# Or start fresh work on a new branch
+git worktree add worktrees/my-feature -b feat/my-feature
+```
+
+### Structure
+
+```
+cprr/                          # Main checkout (on main)
+├── worktrees/                 # Gitignored - parallel work here
+│   ├── CPRR-fob/             # Worktree for Alloy validation
+│   ├── CPRR-xxx/             # Another bead's worktree
+│   └── experiment-foo/       # Ad-hoc experiment
+├── .cprr/                    # Shared conjectures (in git)
+├── .beads/                   # Shared issues (in git)
+└── experiments/              # Shared experiments (in git)
+```
+
+### Workflow
+
+1. **Claim work**: Pick a bead, create branch `feat/CPRR-xxx-description`
+2. **Isolate**: `git worktree add worktrees/CPRR-xxx -b feat/CPRR-xxx-...`
+3. **Work**: Changes in worktree don't affect main checkout
+4. **Share**: `git push -u origin feat/CPRR-xxx-...` (branch visible to other agents)
+5. **Merge**: PR or merge to main when complete
+6. **Cleanup**: `git worktree remove worktrees/CPRR-xxx`
+
+### Discovery
+
+Other agents (on same or different machines) discover in-flight work:
+
+```bash
+git fetch --all
+git branch -r | grep feat/    # See what's being worked on
+git log origin/feat/CPRR-xxx  # Check progress
+```
+
+### Key Points
+
+- `worktrees/` is gitignored - local isolation
+- Branches are shared via `origin` - collaboration
+- `.cprr/` and `.beads/` are in git - state is shared
+- No conflicts on main while features are in-flight
+
+---
+
 ## The CPRR Cycle
 
 ```mermaid
