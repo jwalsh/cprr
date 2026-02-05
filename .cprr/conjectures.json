@@ -242,8 +242,24 @@
       ],
       "created_at": "2026-02-05T11:57:03.280657-05:00",
       "updated_at": "2026-02-05T11:57:35.609099-05:00"
+    },
+    {
+      "id": 18,
+      "title": "cprr doctor command for migrations and health checks",
+      "hypothesis": "A doctor command can validate store integrity, migrate schema versions, and fix common issues - similar to bd doctor, brew doctor, npm doctor patterns",
+      "evidence": [
+        "Use cases: (1) schema migration when conjecture fields change, (2) orphaned evidence cleanup, (3) validate state machine invariants, (4) repair global/local sync issues",
+        "Prior art: bd install docs show manual AGENTS.md update (echo \u003e\u003e AGENTS.md) - cprr could follow same pattern or offer cprr doctor --update-agents"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "feature",
+        "dx"
+      ],
+      "created_at": "2026-02-05T11:58:58.804238-05:00",
+      "updated_at": "2026-02-05T11:59:57.94877-05:00"
     }
   ],
-  "next_id": 18,
+  "next_id": 19,
   "config": {}
 }
