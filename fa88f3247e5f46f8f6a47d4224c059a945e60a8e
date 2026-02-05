@@ -1,0 +1,19 @@
+## Alloy Experiment Notes
+
+### Specification Details
+- cprr.als: 140 lines modeling full state machine
+- Guards as predicates (canAdvanceToTesting, canConfirm, canRefute)
+- Invariants as assertions with bounded checking
+
+### Verification Approach
+- Bounded model checking: 3 conjectures, 10 steps
+- Key properties: confirmedRequiresEvidence, terminalStatesStable
+
+### Decision: Alloy over TLA+
+- TLA+ temporal logic unnecessary for structural guards
+- Alloy Analyzer visualization aids debugging
+- Conjecture #4 (TLA+) abandoned in favor of #8 (Alloy)
+
+### Outstanding
+- CPRR-fob: Run Alloy Analyzer to verify specification
+- Requires Java + Alloy jar (optional dev dependency)
