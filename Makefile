@@ -129,6 +129,12 @@ fmt:
 		shfmt -w $(SHELL_FILES); \
 	fi
 
+# Environment setup
+.env: .env.example
+	cp .env.example .env
+	@echo "Created .env from .env.example"
+	@echo "Edit .env to customize, then run: direnv allow"
+
 # Clean
 clean:
 	rm -f $(BINARY) $(BINARY)-*

@@ -47,7 +47,7 @@ __debug_bin*
 .env
 .env.*
 !.env.example
-.envrc
+!.envrc
 .direnv/
 
 # Credentials
