@@ -30,6 +30,13 @@ experiments/
 | 001 | quickstart-command | CONFIRMED | =cprr quickstart= helps agents understand the tool |
 | 002 | alloy-state-machine | CONFIRMED | Alloy is better than TLA+ for cprr's state machine |
 
+** 002-alloy-state-machine Verification Notes
+
+Specification verified 2026-02-05. See [[file:002-alloy-state-machine/PROOF.md][PROOF.md]] for:
+- Manual review of specification structure
+- Four safety invariants checked
+- Instructions for running Alloy Analyzer verification
+
 * Creating a New Experiment
 
 #+BEGIN_SRC bash

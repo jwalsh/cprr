@@ -114,7 +114,8 @@
       "evidence": [
         "Alloy advantages for cprr: (1) relational model fits guard predicates naturally, (2) Analyzer generates counterexamples visually, (3) bounded checking sufficient for 5 states × small evidence counts, (4) no temporal operators needed - guards are structural not temporal",
         "TLA+ overhead for cprr: (1) temporal logic ([]/\u003c\u003e) overkill for simple guards, (2) TLC model checker designed for distributed systems concurrency, (3) no built-in visualization, (4) steeper learning curve for structural properties",
-        "Alloy spec (cprr.als) is 140 lines: guards as predicates, transitions as relations, invariants as assertions with 'check' - directly maps to cprr's domain model without temporal logic overhead"
+        "Alloy spec (cprr.als) is 140 lines: guards as predicates, transitions as relations, invariants as assertions with 'check' - directly maps to cprr's domain model without temporal logic overhead",
+        "Alloy spec validated: PROOF.md documents manual review and verification steps"
       ],
       "status": "confirmed",
       "tags": [
@@ -122,7 +123,7 @@
         "tooling"
       ],
       "created_at": "2026-02-05T09:23:56.602384-05:00",
-      "updated_at": "2026-02-05T09:24:55.471808-05:00"
+      "updated_at": "2026-02-05T12:44:59.963927-05:00"
     },
     {
       "id": 9,
