@@ -50,7 +50,7 @@ var transitions = []Transition{
 			{
 				Name:    "hypothesis_required",
 				Check:   func(c *Conjecture) bool { return c.Hypothesis != "" },
-				Message: "hypothesis required: use `cprr add ... -h \"your hypothesis\"`",
+				Message: "hypothesis required: use `cprr add ... --hypothesis \"your hypothesis\"`",
 			},
 		},
 	},
@@ -178,7 +178,7 @@ func usage() {
 
 Quick Start:
   cprr init --examples          # Initialize with sample data
-  cprr add "My hypothesis" -h "Expected outcome"
+  cprr add "My hypothesis" --hypothesis "Expected outcome"
   cprr list                     # See all conjectures
   cprr next 1                   # Advance state (guards enforced)
 
@@ -464,7 +464,7 @@ Examples:
 		fmt.Printf("Added %d example conjectures\n", len(store.Conjectures))
 	}
 	fmt.Println("\nNext steps:")
-	fmt.Println("  cprr add \"Your hypothesis\" -h \"Expected outcome\"")
+	fmt.Println("  cprr add \"Your hypothesis\" --hypothesis \"Expected outcome\"")
 	fmt.Println("  cprr list")
 }
 

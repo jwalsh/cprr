@@ -199,8 +199,36 @@
       ],
       "created_at": "2026-02-05T09:54:08.860587-05:00",
       "updated_at": "2026-02-05T09:55:17.084167-05:00"
+    },
+    {
+      "id": 15,
+      "title": "Documentation and quickstart are aligned on CLI testing matrix",
+      "hypothesis": "docs/CLI-TESTING.org, SKILL.md, and cprr quickstart output consistently show flag conflicts (-h), parameter requirements, and state transitions",
+      "evidence": [
+        "Inconsistency found: CONTRIBUTING.org line 90 shows '-h' for hypothesis, but quickstart and main.go:513 correctly show '--hypothesis' to avoid conflict with help flag",
+        "Fixed: Updated CONTRIBUTING.org and main.go to consistently use --hypothesis (not -h) - aligns with quickstart and CLI-TESTING.org"
+      ],
+      "status": "confirmed",
+      "tags": [
+        "documentation",
+        "validation"
+      ],
+      "created_at": "2026-02-05T09:58:12.401578-05:00",
+      "updated_at": "2026-02-05T10:01:39.998691-05:00"
+    },
+    {
+      "id": 16,
+      "title": "cprr quickstart idempotently updates AGENTS.md",
+      "hypothesis": "Running cprr quickstart multiple times safely adds CPRR methodology section to AGENTS.md without duplication, enabling adoption in any repo",
+      "status": "testing",
+      "tags": [
+        "feature",
+        "adoption"
+      ],
+      "created_at": "2026-02-05T09:59:17.065766-05:00",
+      "updated_at": "2026-02-05T09:59:34.880717-05:00"
     }
   ],
-  "next_id": 15,
+  "next_id": 17,
   "config": {}
 }

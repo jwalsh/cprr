@@ -87,7 +87,7 @@ rm -rf ~/.cprr .cprr
 ./cprr add "No hypothesis"
 ./cprr next 4                    # Should fail: missing hypothesis
 
-./cprr add "With hypothesis" -h "Expected outcome"
+./cprr add "With hypothesis" --hypothesis "Expected outcome"
 ./cprr next 5                    # Should succeed: open → testing
 ./cprr next 5                    # Should fail: missing evidence
 
