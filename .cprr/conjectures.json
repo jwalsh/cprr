@@ -220,15 +220,30 @@
       "id": 16,
       "title": "cprr quickstart idempotently updates AGENTS.md",
       "hypothesis": "Running cprr quickstart multiple times safely adds CPRR methodology section to AGENTS.md without duplication, enabling adoption in any repo",
-      "status": "testing",
+      "status": "abandoned",
       "tags": [
         "feature",
         "adoption"
       ],
       "created_at": "2026-02-05T09:59:17.065766-05:00",
-      "updated_at": "2026-02-05T09:59:34.880717-05:00"
+      "updated_at": "2026-02-05T11:58:09.264118-05:00"
+    },
+    {
+      "id": 17,
+      "title": "cprr and bd init/quickstart should be idempotent like bd install/uninstall",
+      "hypothesis": "Running cprr init, cprr quickstart, bd init, bd install multiple times produces same result - no duplicate entries, no errors, safe re-runs",
+      "evidence": [
+        "Current state: cprr init errors if exists (exit 1), bd init errors if exists (exit 1), cprr quickstart creates new demo conjecture each run (not idempotent - accumulates #16, #17, #18...)"
+      ],
+      "status": "open",
+      "tags": [
+        "semantics",
+        "design"
+      ],
+      "created_at": "2026-02-05T11:57:03.280657-05:00",
+      "updated_at": "2026-02-05T11:57:35.609099-05:00"
     }
   ],
-  "next_id": 17,
+  "next_id": 18,
   "config": {}
 }
