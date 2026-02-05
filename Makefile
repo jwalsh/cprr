@@ -1,5 +1,6 @@
-.PHONY: all build test clean lint lint-go lint-org lint-shell install help run tangle detangle
+.PHONY: all build test clean lint lint-go lint-org lint-shell install help run tangle detangle worktrees
 
+GO ?= go
 BINARY := cprr
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
@@ -20,13 +21,13 @@ all: lint build test
 build: $(BINARY)
 
 $(BINARY): $(GO_FILES)
-	go build $(LDFLAGS) -o $@ .
+	$(GO) build $(LDFLAGS) -o $@ .
 
 build-dev: $(GO_FILES)
-	go build -o $(BINARY) .
+	$(GO) build -o $(BINARY) .
 
 build-release: $(GO_FILES)
-	go build $(LDFLAGS) -o $(BINARY) .
+	$(GO) build $(LDFLAGS) -o $(BINARY) .
 
 # Cross-compilation targets
 PLATFORMS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd64
@@ -34,19 +35,19 @@ PLATFORMS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd64
 define build-platform
 $(BINARY)-$(1): $(GO_FILES)
 	GOOS=$(word 1,$(subst -, ,$(1))) GOARCH=$(word 2,$(subst -, ,$(1))) \
-		go build $(LDFLAGS) -o $$@ .
+		$(GO) build $(LDFLAGS) -o $$@ .
 endef
 
 $(foreach p,$(PLATFORMS),$(eval $(call build-platform,$(p))))
 
 $(BINARY)-windows-amd64.exe: $(GO_FILES)
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $@ .
+	GOOS=windows GOARCH=amd64 $(GO) build $(LDFLAGS) -o $@ .
 
 build-all: $(addprefix $(BINARY)-,$(PLATFORMS)) $(BINARY)-windows-amd64.exe
 
 # Install
 install: $(GO_FILES)
-	go install $(LDFLAGS) .
+	$(GO) install $(LDFLAGS) .
 
 # Run (development)
 run: build-dev
@@ -54,13 +55,13 @@ run: build-dev
 
 # Test
 test:
-	go test -v ./...
+	$(GO) test -v ./...
 
 test-cover:
-	go test -cover ./...
+	$(GO) test -cover ./...
 
 test-race:
-	go test -race ./...
+	$(GO) test -race ./...
 
 test-cli: $(BINARY)
 	@chmod +x docs/test-cli.sh 2>/dev/null || true
@@ -91,7 +92,7 @@ lint: lint-go lint-org lint-shell
 
 lint-go:
 	@echo "==> Go: vet"
-	go vet ./...
+	$(GO) vet ./...
 	@echo "==> Go: fmt check"
 	@gofmt -l $(GO_FILES) | tee /dev/stderr | (! read)
 	@if command -v staticcheck >/dev/null 2>&1; then \
@@ -156,11 +157,15 @@ clean:
 	rm -f $(BINARY) $(BINARY)-*
 	rm -rf .cprr dist/
 
+# Git worktrees management
+worktrees:
+	@./scripts/worktrees.sh $(ARGS)
+
 # Dev setup
 dev-deps:
 	@echo "Installing development dependencies..."
-	go install honnef.co/go/tools/cmd/staticcheck@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo ""
 	@echo "Optional (install via package manager):"
 	@echo "  brew install shellcheck shfmt"
@@ -248,7 +253,7 @@ help:
 
 dist/$(BINARY)-%: $(GO_FILES) | dist/
 	GOOS=$(word 1,$(subst -, ,$*)) GOARCH=$(word 2,$(subst -, ,$*)) \
-		go build $(LDFLAGS) -o $@ .
+		$(GO) build $(LDFLAGS) -o $@ .
 
 # Fallthrough: run scripts from ./scripts/
 %:
