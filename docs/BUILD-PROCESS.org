@@ -1,0 +1,286 @@
+#+TITLE: cprr Build Process & Methodology
+#+AUTHOR: cprr team
+#+DATE: 2026-02-05
+
+* Overview
+
+This document captures the build process, methodology, issues encountered,
+and sequencing decisions made during the development of cprr.
+
+* Build Methodology
+
+** Incremental Development
+
+The project was built incrementally with progressive commits:
+
+1. *Foundation* - Module initialization, zero dependencies
+2. *Core CLI* - State machine with guards
+3. *Build System* - Makefile with automatic variables
+4. *Documentation* - README, CONTRIBUTING in org-mode
+5. *CI/CD* - GitHub Actions for lint and release
+6. *Tooling* - Release scripts, dependency checks
+
+** Design Principles
+
+| Principle | Implementation |
+|-----------+----------------|
+| Zero dependencies | Pure Go stdlib |
+| Unix philosophy | stdin/stdout/stderr, exit codes |
+| Composability | Makefile fallthrough to scripts |
+| Literate programming | Org-mode documentation |
+| Progressive enhancement | Guards enforce rigor |
+
+* Sequencing of Tasks
+
+** Phase 1: Core Implementation
+
+#+BEGIN_SRC
+070a21e chore: initialize Go module
+e4f3a1b feat: implement conjecture tracking CLI
+#+END_SRC
+
+- Started with =go mod init=
+- Single-file implementation (main.go)
+- State machine with 5 states
+- Guard system for transition validation
+
+** Phase 2: Build Infrastructure
+
+#+BEGIN_SRC
+d336a63 chore: add comprehensive gitignore
+c614118 build: add Makefile with linting and org-mode support
+a6bd772 build: use automatic variables and add fallthrough
+#+END_SRC
+
+- .gitignore for Go, Emacs, env files
+- Makefile with =$@=, =$<=, =%/:= patterns
+- Fallthrough to =./scripts/*.sh=
+
+** Phase 3: Documentation
+
+#+BEGIN_SRC
+00572f9 docs: add README with badges and quickstart
+4041460 docs: add contributing guide
+#+END_SRC
+
+- Org-mode format for literate programming
+- Tangleable code blocks
+- State machine diagrams in ASCII
+
+** Phase 4: Environment & CI
+
+#+BEGIN_SRC
+c6f9b3c chore: add environment config support
+da868dc chore: add direnv support
+3a6c09d ci: add GitHub Actions workflows
+#+END_SRC
+
+- =.env.example= template
+- =.envrc= for direnv integration
+- CI: lint-go, lint-shell, lint-org, build matrix
+- Release workflow with cross-compilation
+
+** Phase 5: Release Tooling
+
+#+BEGIN_SRC
+e2e6c23 feat: add release management scripts
+#+END_SRC
+
+- Semantic versioning (major/minor/patch)
+- Git tag creation
+- GitHub release generation
+- Dependency checking
+
+** Phase 6: Formal Methods & Tracking
+
+#+BEGIN_SRC
+e04c150 chore: add beads tracking and formal methods deps
+#+END_SRC
+
+- bd (beads) for issue tracking
+- Formal methods tool checks (TLA+, Z3, Alloy)
+- experiments/ directory structure
+
+* Issues Encountered
+
+** Flag Parsing Order
+
+*Problem*: Global =-h= flag intercepted command-specific help.
+
+*Solution*: Parse global flags only before command token:
+#+BEGIN_SRC go
+// Only parse global flags BEFORE the command
+for i := 0; i < len(args); i++ {
+    if !strings.HasPrefix(arg, "-") {
+        remaining = append(remaining, args[i:]...)
+        break
+    }
+    // handle global flags
+}
+#+END_SRC
+
+** Hypothesis Flag Conflict
+
+*Problem*: =-h= commonly means "hypothesis" but conflicts with help.
+
+*Solution*: Use =--hypothesis= for the long form, document clearly:
+#+BEGIN_SRC
+Note: The hypothesis flag uses --hypothesis (not -h) to avoid
+conflict with the help flag.
+#+END_SRC
+
+** Makefile Redundancy
+
+*Problem*: Explicit =dist/:= rule duplicated =%/:= pattern.
+
+*Solution*: Remove redundant rule, rely on pattern:
+#+BEGIN_SRC makefile
+# Directory creation pattern
+%/:
+	install -d $@
+
+# This uses the pattern above via | dist/
+dist/$(BINARY)-%: $(GO_FILES) | dist/
+#+END_SRC
+
+** Version Detection
+
+*Problem*: =go --version= returns error (flag not defined).
+
+*Solution*: Special-case version commands in deps.sh:
+#+BEGIN_SRC bash
+case "$cmd" in
+    go) version=$(go version 2>&1 | head -1) ;;
+    tmux) version=$(tmux -V 2>&1 | head -1) ;;
+    *) version=$("$cmd" --version 2>&1 | head -1) ;;
+esac
+#+END_SRC
+
+* Testing Considerations
+
+** Unit Testing
+
+- Go's built-in testing (=go test=)
+- Race detection (=go test -race=)
+- Coverage reporting (=go test -cover=)
+
+** Integration Testing
+
+=make test-integration= runs full workflow:
+#+BEGIN_SRC bash
+./cprr init --local --examples
+./cprr next 1
+./cprr evidence 1 "..."
+./cprr next 1
+./cprr list --status confirmed
+#+END_SRC
+
+** CLI Validation
+
+=docs/CLI-TESTING.org= contains:
+- Flag combination matrices
+- State transition test cases
+- Guard violation scenarios
+- Tangleable test script
+
+** Formal Verification (Future)
+
+TLA+ specification for:
+- State machine safety properties
+- Guard condition correctness
+- Liveness (abandoned always reachable)
+
+* Architecture Decisions
+
+** Single File vs Packages
+
+*Decision*: Single =main.go= file.
+
+*Rationale*:
+- Simple CLI, ~1000 lines
+- Easy to understand at a glance
+- No import cycles to manage
+- Can refactor later if needed
+
+** State Machine as Data
+
+*Decision*: Define transitions as data, not code.
+
+#+BEGIN_SRC go
+var transitions = []Transition{
+    {From: StatusOpen, To: StatusTesting, Guards: []Guard{...}},
+    ...
+}
+#+END_SRC
+
+*Rationale*:
+- Declarative, easy to verify
+- Maps directly to formal specification
+- Guards are composable functions
+
+** JSON Storage
+
+*Decision*: JSON file in =~/.cprr/= or =./.cprr/=.
+
+*Rationale*:
+- Human-readable, debuggable
+- No database dependency
+- Easy backup/sync
+- Local override for project-specific tracking
+
+* Toolchain
+
+| Tool | Purpose | Required |
+|------+---------+----------|
+| go 1.21+ | Build | Yes |
+| git | Version control | Yes |
+| gh | GitHub operations | Yes |
+| gmake | Build automation | Yes |
+| emacs | Org tangle/lint | No |
+| shellcheck | Shell linting | No |
+| direnv | Environment | No |
+| bd | Issue tracking | No |
+
+* File Structure
+
+#+BEGIN_SRC
+cprr/
+├── main.go              # CLI implementation
+├── go.mod               # Module definition
+├── Makefile             # Build system
+├── .env.example         # Environment template
+├── .envrc               # direnv config
+├── .gitignore           # Ignore patterns
+├── .gitattributes       # Git attributes
+├── CLAUDE.md -> AGENTS.md
+├── AGENTS.md            # Agent personas
+├── README.org           # User documentation
+├── CONTRIBUTING.org     # Developer guide
+├── CPRR.org             # Project specification
+├── READING.org          # Reference materials
+├── ROLES.org            # Team structure
+├── .github/
+│   └── workflows/
+│       ├── ci.yml       # Lint & build
+│       └── release.yml  # Release automation
+├── .beads/              # Issue tracking (bd)
+├── scripts/
+│   ├── release.sh       # Semantic versioning
+│   ├── major.sh         # Bump major
+│   ├── minor.sh         # Bump minor
+│   ├── patch.sh         # Bump patch
+│   └── deps.sh          # Dependency check
+├── docs/
+│   ├── CLI-TESTING.org  # Test matrices
+│   └── BUILD-PROCESS.org # This file
+└── experiments/         # Experiment data
+#+END_SRC
+
+* Lessons Learned
+
+1. *Start with the state machine* - Core logic first, CLI second
+2. *Guards as functions* - Composable, testable, formally verifiable
+3. *Makefile patterns* - =%/:= and fallthrough reduce boilerplate
+4. *Org-mode for docs* - Tangleable, exportable, version-controlled
+5. *Progressive commits* - Each commit is a coherent unit with notes
+6. *Git notes* - Capture context that doesn't fit in commit message
