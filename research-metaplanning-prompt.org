@@ -1,0 +1,333 @@
+#+TITLE: Research Prototype Metaplanning — LLM Context Prompt
+#+AUTHOR: Jason Walsh <j@wal.sh>
+#+DATE: 2026-02-06
+#+PROPERTY: header-args :mkdirp t
+#+STARTUP: showall
+#+OPTIONS: toc:2 num:t
+
+* Purpose
+
+This document is a reusable context prompt for directing an LLM to metaplan a
+research prototype sprint from an existing codebase. It codifies the process
+used to go from a working CLI tool (cprr) to a structured research plan, formal
+experiment specifications, multi-format documentation, and an ACM conference
+paper scaffold — in a single interactive session.
+
+Feed this document (or the relevant sections) as context when starting a new
+metaplanning session. The LLM should treat it as a methodology guide, not a
+template to fill in mechanically.
+
+* Inputs Required
+
+Before beginning, ensure the following are available in the conversation context:
+
+| Input                | Format         | Purpose                                    |
+|----------------------+----------------+--------------------------------------------|
+| Source code          | .go / .py / .rs | Primary implementation to analyze          |
+| Existing issues      | Markdown/org   | Open questions, beads, TODOs               |
+| Prior experiments    | CONJECTURE.md  | What's been tested, confirmed, refuted     |
+| Formal specs         | .als / .tla    | Existing verification artifacts            |
+| README / AGENTS.md  | Markdown/org   | Project context, contributor guide         |
+
+Not all inputs are required. The LLM should work with what's available and note
+gaps as risks in the sprint plan.
+
+* Phase 1: Codebase Analysis
+
+#+begin_src text :tangle prompts/01-analysis.txt
+You are a research engineer analyzing a software project to identify untested
+hypotheses, scaling risks, and formalization opportunities.
+
+Given the project source and documentation, produce:
+
+1. A CURRENT STATE summary:
+   - What works (confirmed conjectures, passing tests)
+   - What's in progress (open experiments, WIP branches)
+   - What's assumed but untested (implicit hypotheses in the code)
+
+2. An IMPLICIT HYPOTHESIS inventory:
+   - For each major design decision, state the underlying assumption
+   - Express each as a falsifiable prediction
+   - Flag which ones have evidence and which are untested
+
+3. A RISK SURFACE:
+   - Concurrency / composition gaps
+   - Missing formal guarantees
+   - Adoption friction points
+   - Scaling assumptions
+
+Format: org-mode with properties blocks. Use CPRR terminology
+(conjecture/hypothesis/evidence/falsification criteria) where applicable.
+#+end_src
+
+* Phase 2: Theme Extraction
+
+#+begin_src text :tangle prompts/02-themes.txt
+From the codebase analysis, extract 2-4 research themes. Each theme should:
+
+1. Be named with a single word or short phrase (Composition, Verification,
+   Adoption, Performance, Safety, etc.)
+
+2. Group related untested hypotheses under a coherent research question
+
+3. Have a clear "definition of done" — what would it mean for this theme
+   to be resolved?
+
+Themes should be:
+- Orthogonal (minimal overlap)
+- Ordered by dependency (if Theme A must be resolved before Theme B, say so)
+- Balanced in scope (no theme should contain >5 experiments)
+
+Output a Mermaid diagram showing inter-theme dependencies.
+#+end_src
+
+* Phase 3: Experiment Design
+
+Each experiment follows the CPRR lifecycle. The LLM should generate experiments
+in this structure:
+
+#+begin_src text :tangle prompts/03-experiments.txt
+For each theme, design 2-4 experiments. Each experiment MUST contain:
+
+*** NNN: Title
+:PROPERTIES:
+:BEAD: ID (if linked to an existing issue)
+:PRIORITY: P1 | P2 | P3
+:EFFORT: S (1-2 days) | M (2-3 days) | L (3-5 days)
+:IMPACT: Low | Medium | High — with rationale
+:END:
+
+**** Conjecture
+What we believe to be true but haven't proven. One paragraph.
+
+**** Hypothesis
+The specific, testable prediction. Must be falsifiable.
+Use the form: "If [condition], then [observable outcome] in [measurable terms]."
+
+**** Falsification Criteria
+Bullet list of specific outcomes that would DISPROVE the hypothesis.
+These are the most important part — they define what "wrong" looks like.
+At minimum:
+- One functional failure case
+- One performance/scale boundary
+- One edge case or adversarial scenario
+
+**** Method
+Numbered steps to execute the experiment. Should be concrete enough that
+a developer (human or AI agent) could follow them without asking questions.
+
+Scoring: priority = impact × (1/effort), biased toward unblocking downstream.
+#+end_src
+
+* Phase 4: Dependency Ordering
+
+#+begin_src text :tangle prompts/04-dependencies.txt
+Organize experiments into execution tiers:
+
+- Tier 1: Unblock everything. No dependencies on other experiments.
+  Can be executed in parallel. Do these first.
+
+- Tier 2: Extend guarantees. Depend on Tier 1 results.
+  May run in parallel within the tier.
+
+- Tier 3: Integration capstones. Depend on Tier 1 and/or Tier 2.
+  These validate that the system works end-to-end.
+
+Produce:
+1. A tier assignment table with rationale
+2. A Mermaid dependency graph with:
+   - Nodes colored by tier (blue=T1, orange=T2, red=T3)
+   - Edges showing blocking dependencies
+   - Subgraphs grouped by theme
+3. A recommended execution schedule assuming 1 developer
+
+Critical rule: If experiment A's falsification would invalidate experiment B's
+hypothesis, A must be in an earlier tier than B.
+#+end_src
+
+* Phase 5: Document Generation
+
+The sprint plan should be authored in org-mode and exported to multiple formats.
+
+#+begin_src text :tangle prompts/05-documents.txt
+Generate the following deliverables:
+
+1. SPRINT PLAN (org-mode, canonical source)
+   - Sprint overview with theme summary
+   - Current backlog snapshot (table)
+   - Dependency graph (Mermaid)
+   - Tier assignment (table with rationale)
+   - Full experiment specifications (Phase 3 format)
+   - Appendices: glossary, risk register
+
+2. EXPORTS (from org-mode source)
+   - HTML (ox-html, standalone)
+   - Markdown (ox-md, GitHub-compatible)
+   - Plain text (ox-ascii)
+   - LaTeX (ox-latex)
+   - PDF (pdflatex, two-pass)
+
+3. PAPER SCAFFOLD (ACM sigconf)
+   - .org source with #+LATEX_CLASS: acmart headers
+   - .tex hand-tuned for submission
+   - .bib bibliography
+   - Mermaid diagrams as .mmd source files
+   - Makefile for reproducible builds
+
+Org-mode conventions:
+- #+PROPERTY: header-args :mkdirp t
+- Use :PROPERTIES: drawers for metadata
+- Mermaid blocks: #+begin_src mermaid :file images/name.png
+- Tables: org-mode native (| col1 | col2 |)
+- Cross-references: [[#custom-id]] with :CUSTOM_ID: properties
+#+end_src
+
+* Phase 6: Paper Scaffold
+
+If the research is targeting a specific venue, the LLM should scaffold a paper.
+
+#+begin_src text :tangle prompts/06-paper.txt
+Generate an ACM-formatted paper scaffold with:
+
+1. METADATA
+   - \documentclass[sigconf,screen]{acmart}  (or sigplan for OOPSLA/ICFP)
+   - CCS concepts from https://dl.acm.org/ccs
+   - Keywords (5-8 terms)
+   - Author blocks with affiliations
+
+2. STRUCTURE (for a tool demo / short paper)
+   - Abstract (~150 words, state the tool, the method, and the result)
+   - Introduction (problem → insight → contribution list)
+   - Background and Motivation (implicit hypotheses problem, related work)
+   - Core Technical Section (state machine, guards, formal model)
+   - Implementation (storage, CLI, architecture)
+   - Evaluation (self-hosting data, key findings)
+   - Research Plan (themes, experiments, dependencies)
+   - Tool Availability (URL, license, build instructions)
+   - Conclusion (restate contribution, future work)
+   - Acknowledgments (credit AI assistance explicitly)
+   - Bibliography (BibTeX)
+
+3. BUILD SYSTEM (Makefile)
+   Targets: paper, sprint, diagrams, clean, distclean, help
+   Dependencies: emacs, pdflatex, texlive-publishers, mmdc (optional)
+
+4. AI AUTHORSHIP DISCLOSURE
+   If an LLM contributed to research planning or manuscript preparation,
+   this must be disclosed in:
+   - \thanks{} footnote on first page
+   - Acknowledgments section with date and model version
+   - Optionally as a co-author (venue-dependent)
+
+For double-blind submission, add: anonymous,review to class options.
+For single-column review: manuscript to class options.
+#+end_src
+
+* Execution Checklist
+
+Use this checklist when running a metaplanning session:
+
+#+begin_src text :tangle prompts/00-checklist.txt
+METAPLANNING SESSION CHECKLIST
+
+□ Gather inputs (source, issues, prior experiments, specs)
+□ Phase 1: Analyze codebase → current state + implicit hypotheses
+□ Phase 2: Extract 2-4 orthogonal themes
+□ Phase 3: Design experiments (conjecture/hypothesis/falsification/method)
+□ Phase 4: Assign tiers, build dependency graph
+□ Phase 5: Generate org-mode sprint plan + multi-format exports
+□ Phase 6: Scaffold conference paper (if targeting a venue)
+□ Package deliverables (Makefile, README, .gitignore)
+□ Verify: every hypothesis has falsification criteria
+□ Verify: every experiment has a concrete method
+□ Verify: dependency graph has no cycles
+□ Verify: Tier 1 experiments have no upstream dependencies
+#+end_src
+
+* Prompt Assembly
+
+For a complete metaplanning session, concatenate the prompts in order:
+
+#+begin_src shell :tangle scripts/assemble-prompt.sh :shebang #!/bin/sh
+#!/bin/sh
+# Assemble the full metaplanning prompt from tangled fragments
+cat prompts/00-checklist.txt
+echo "---"
+cat prompts/01-analysis.txt
+echo "---"
+cat prompts/02-themes.txt
+echo "---"
+cat prompts/03-experiments.txt
+echo "---"
+cat prompts/04-dependencies.txt
+echo "---"
+cat prompts/05-documents.txt
+echo "---"
+cat prompts/06-paper.txt
+#+end_src
+
+Or provide this entire org file as context — the LLM should parse the
+=#+begin_src text :tangle= blocks as role-specific instructions.
+
+* Adaptation Notes
+
+** Venue Variants
+
+| Venue          | Class Options                   | Page Limit | Notes                    |
+|----------------+---------------------------------+------------+--------------------------|
+| SPLASH Tool    | sigconf,screen                  | 4+1 refs   | Double-column            |
+| OOPSLA         | sigplan,screen,review,anonymous | 25         | Double-blind             |
+| Onward!        | sigconf,screen,review,anonymous | 15         | Double-blind             |
+| ICSE NIER      | sigconf,screen                  | 4          | New Ideas track          |
+| Workshop       | sigconf,screen                  | 6-8        | Varies by workshop       |
+
+** Tool Variants
+
+This methodology generalizes beyond CPRR. Replace the domain-specific content:
+
+| CPRR Concept          | General Equivalent                |
+|-----------------------+-----------------------------------|
+| Conjecture            | Research question / hypothesis    |
+| Falsification criteria | Acceptance/rejection criteria    |
+| Evidence              | Experimental results              |
+| Guard                 | Precondition / invariant          |
+| Bead                  | Issue / work item                 |
+| Experiment            | Study / investigation             |
+
+** LLM-Specific Notes
+
+- Claude: Provide source files as uploads or inline. Use "continue" for
+  multi-turn generation. The sandbox environment has emacs, pdflatex, and
+  npm available for live compilation.
+
+- Claude Code: Can execute the full pipeline locally. Point it at the repo
+  and ask it to run =make paper=.
+
+- Other LLMs: Provide this document as system context. The tangled prompt
+  fragments work as standalone instructions for models without file access.
+
+* Example Session Transcript
+
+The methodology was developed and validated in a single claude.ai session
+on 2026-02-06. The session produced:
+
+| Artifact             | Size   | Format              |
+|----------------------+--------+---------------------|
+| Sprint plan          | 15K    | .org (canonical)    |
+| Sprint exports       | varies | .html .md .txt .pdf |
+| SPLASH paper         | 14K    | .tex (sigconf)      |
+| Compiled paper       | 412K   | .pdf (3 pages)      |
+| Mermaid diagrams     | ~1K    | .mmd (2 files)      |
+| Diagram preview      | 2K     | .html (browser)     |
+| Bibliography         | 1.8K   | .bib                |
+| Build system         | 3.5K   | Makefile            |
+| This prompt document | ~12K   | .org                |
+
+Total wall-clock time: ~30 minutes including dependency installation
+(texlive-publishers, texlive-fonts-extra, texlive-plain-generic).
+
+The key insight: the gap between "working prototype with informal notes"
+and "structured research plan with conference paper scaffold" is smaller
+than it appears. An LLM with access to the codebase and a build environment
+can bridge it in a single session — the methodology just needs to be explicit
+about what "done" looks like at each phase.
