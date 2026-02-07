@@ -1,0 +1,20 @@
+graph TD
+    E004[004 Refinery] --> E007[007 Multi-Agent]
+    E005[005 Bead Isolation] --> E007
+    E006[006 Deconfliction] --> E007
+    E008[008 PBT] --> E010[010 CI Guards]
+    E009[009 Liveness] --> E010
+    E011[011 Agent Pkg] --> E012[012 Dogfood]
+    E012 --> E013[013 Cross-Repo]
+    E007 --> E013
+
+    style E004 fill:#4a9eff,color:#fff
+    style E005 fill:#4a9eff,color:#fff
+    style E008 fill:#4a9eff,color:#fff
+    style E006 fill:#f5a623,color:#fff
+    style E009 fill:#f5a623,color:#fff
+    style E011 fill:#f5a623,color:#fff
+    style E007 fill:#d0021b,color:#fff
+    style E010 fill:#d0021b,color:#fff
+    style E012 fill:#d0021b,color:#fff
+    style E013 fill:#d0021b,color:#fff

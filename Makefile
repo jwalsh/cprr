@@ -1,4 +1,4 @@
-.PHONY: all build test clean lint lint-go lint-org lint-shell install help run tangle detangle worktrees worktrees-sync
+.PHONY: all build test clean lint lint-go lint-org lint-shell install help run tangle detangle worktrees worktrees-sync paper
 
 GO ?= go
 BINARY := cprr
@@ -211,6 +211,10 @@ detangle:
 		echo "  SKIP: emacs not installed"; \
 	fi
 
+# Paper
+paper:
+	$(MAKE) -C docs/SPLASH-2026 paper
+
 # Help
 help:
 	@echo "cprr Makefile"
@@ -246,6 +250,9 @@ help:
 	@echo "Org-mode:"
 	@echo "  make tangle           Extract code from org files"
 	@echo "  make detangle         Sync code changes back to org files"
+	@echo ""
+	@echo "Paper:"
+	@echo "  make paper            Build SPLASH 2026 paper"
 	@echo ""
 	@echo "Scripts (fallthrough):"
 	@echo "  make <name>           Run ./scripts/<name>.sh if it exists"

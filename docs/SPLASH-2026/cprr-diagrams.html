@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CPRR Diagrams — Mermaid Preview</title>
+<style>
+body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+h1 { color: #4a9eff; font-size: 1.4rem; }
+h2 { color: #f5a623; font-size: 1.1rem; margin-top: 2rem; }
+.mermaid { background: #16213e; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+pre { background: #0f3460; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<h1>CPRR — Conjecture-Proposition-Refutation-Resolution</h1>
+
+<h2>State Machine</h2>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> open
+    open --> testing : hypothesis defined
+    testing --> confirmed : 2+ evidence entries
+    testing --> refuted : 1+ evidence entries
+    open --> abandoned : escape hatch
+    testing --> abandoned : escape hatch
+    confirmed --> [*]
+    refuted --> [*]
+    abandoned --> [*]
+</div>
+
+<h2>Experiment Dependency Graph</h2>
+<div class="mermaid">
+graph TD
+    E004[004 Refinery] --> E007[007 Multi-Agent]
+    E005[005 Bead Isolation] --> E007
+    E006[006 Deconfliction] --> E007
+    E008[008 PBT] --> E010[010 CI Guards]
+    E009[009 Liveness] --> E010
+    E011[011 Agent Pkg] --> E012[012 Dogfood]
+    E012 --> E013[013 Cross-Repo]
+    E007 --> E013
+
+    style E004 fill:#4a9eff,color:#fff
+    style E005 fill:#4a9eff,color:#fff
+    style E008 fill:#4a9eff,color:#fff
+    style E006 fill:#f5a623,color:#fff
+    style E009 fill:#f5a623,color:#fff
+    style E011 fill:#f5a623,color:#fff
+    style E007 fill:#d0021b,color:#fff
+    style E010 fill:#d0021b,color:#fff
+    style E012 fill:#d0021b,color:#fff
+    style E013 fill:#d0021b,color:#fff
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<script>mermaid.initialize({ theme: 'dark', startOnLoad: true });</script>
+</body>
+</html>

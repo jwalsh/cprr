@@ -59,3 +59,13 @@ secrets.yaml
 
 # Worktrees for parallel agent work
 worktrees/
+
+# SPLASH-2026 paper build artifacts
+docs/SPLASH-2026/*.pdf
+docs/SPLASH-2026/*.aux
+docs/SPLASH-2026/*.log
+docs/SPLASH-2026/*.bbl
+docs/SPLASH-2026/*.blg
+docs/SPLASH-2026/*.out
+docs/SPLASH-2026/*.fls
+docs/SPLASH-2026/*.fdb_latexmk

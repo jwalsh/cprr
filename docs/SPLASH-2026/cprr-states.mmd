@@ -1,0 +1,10 @@
+stateDiagram-v2
+    [*] --> open
+    open --> testing : hypothesis defined
+    testing --> confirmed : 2+ evidence entries
+    testing --> refuted : 1+ evidence entries
+    open --> abandoned : escape hatch
+    testing --> abandoned : escape hatch
+    confirmed --> [*]
+    refuted --> [*]
+    abandoned --> [*]

@@ -1,0 +1,85 @@
+#+TITLE: CPRR Paper — Build Pipeline
+#+AUTHOR: Jason Walsh
+#+DATE: 2026-02-06
+
+* Overview
+
+This directory contains the source materials for the CPRR SPLASH 2026 paper,
+authored in org-mode with ACM =sigconf= LaTeX export.
+
+* Project Structure
+
+#+begin_src text
+.
+├── Makefile                   # Build orchestration
+├── README.org                 # This file
+│
+├── cprr-splash.org            # Paper source (org-mode, primary)
+├── cprr-splash.tex            # Paper source (LaTeX, hand-tuned)
+├── cprr.bib                   # Bibliography (BibTeX)
+├── cprr-splash.pdf            # Compiled paper (ACM sigconf)
+│
+├── cprr-sprint-plan.org       # Research sprint plan (source)
+├── cprr-sprint-plan.{html,md,txt,tex,pdf}  # Sprint plan exports
+│
+├── cprr-diagrams.html         # Mermaid diagram preview (browser)
+├── cprr-states.mmd            # State machine diagram (Mermaid)
+└── cprr-deps.mmd              # Dependency graph (Mermaid)
+#+end_src
+
+* Build Targets
+
+| Target     | Command          | Output                              |
+|------------+------------------+-------------------------------------|
+| Paper      | =make paper=     | =cprr-splash.pdf= (ACM 2-column)   |
+| Sprint     | =make sprint=    | =.html .md .txt .tex .pdf=         |
+| Diagrams   | =make diagrams=  | =.png= from =.mmd= (needs =mmdc=) |
+| Everything | =make all=       | All of the above                    |
+| Clean      | =make clean=     | Remove =.aux .log .bbl= artifacts  |
+| Nuke       | =make distclean= | Remove all generated files          |
+
+* Dependencies
+
+| Package                 | Purpose                      | Install                       |
+|-------------------------+------------------------------+-------------------------------|
+| =emacs=                 | org-mode export engine        | =apt install emacs-nox=       |
+| =texlive-latex-base=    | =pdflatex=                   | (usually pre-installed)       |
+| =texlive-publishers=    | =acmart.cls=, ACM bib styles | =apt install texlive-publishers= |
+| =texlive-fonts-extra=   | Libertine, Inconsolata       | =apt install texlive-fonts-extra= |
+| =texlive-plain-generic= | =binhex.tex= (acmart dep)   | =apt install texlive-plain-generic= |
+| =@mermaid-js/mermaid-cli= | Diagram rendering (optional) | =npm install -g @mermaid-js/mermaid-cli= |
+
+* ACM Class Variants
+
+Change =#+LATEX_CLASS_OPTIONS= in =cprr-splash.org=:
+
+#+begin_src text
+sigconf                    — SPLASH Tool Demos, most proceedings
+sigplan                    — OOPSLA, PLDI, ICFP
+manuscript                 — single-column review submission
+sigconf,review,anonymous   — double-blind submission
+#+end_src
+
+* Authoring Pipeline
+
+#+begin_src mermaid :file pipeline.png :exports results
+graph LR
+    ORG[cprr-splash.org] -->|ox-latex| TEX[.tex]
+    TEX -->|pdflatex ×3| PDF[.pdf]
+    BIB[cprr.bib] -->|bibtex| TEX
+    ORG -->|babel extract| MMD[.mmd]
+    MMD -->|mmdc| PNG[.png]
+    ORG -->|ox-html| HTML[.html]
+    ORG -->|ox-md| MD[.md]
+#+end_src
+
+* Notes
+
+- The =.tex= was initially generated via =ox-latex= then hand-tuned for ACM
+  compliance. Both the =.org= and =.tex= are maintained; the =.org= is the
+  canonical source for content, the =.tex= for submission.
+- =ulem.sty= may be missing from minimal texlive installs. If =ox-latex=
+  inserts =\usepackage[normalem]{ulem}=, comment it out unless you use
+  strikethrough formatting.
+- The Mermaid diagrams render in any browser via =cprr-diagrams.html= (loads
+  mermaid.js from CDN). For LaTeX inclusion, render to PNG locally with =mmdc=.

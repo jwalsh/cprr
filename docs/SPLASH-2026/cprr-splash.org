@@ -1,0 +1,282 @@
+#+TITLE: CPRR: Hypothesis-Driven Development Through Falsificationist State Machines
+#+SUBTITLE: Applying Popperian Epistemology to Technical Decision-Making
+#+AUTHOR: Jason Walsh, Claude Opus 4.6
+#+EMAIL: j@wal.sh
+#+DATE: 2026-02-06
+#+OPTIONS: toc:nil num:t H:3 ':t
+#+LANGUAGE: en
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ACM sigconf (SPLASH) LaTeX configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#+LATEX_CLASS: acmart
+#+LATEX_CLASS_OPTIONS: [sigconf,screen]
+
+# ACM rights management — replace after eRights form
+#+LATEX_HEADER: \setcopyright{rightsretained}
+#+LATEX_HEADER: \copyrightyear{2026}
+#+LATEX_HEADER: \acmYear{2026}
+#+LATEX_HEADER: \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+#+LATEX_HEADER: \acmConference[SPLASH '26]{ACM SIGPLAN Conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 4--9, 2026}{TBD}
+#+LATEX_HEADER: \acmBooktitle{SPLASH '26: ACM SIGPLAN Conference on Systems, Programming, Languages, and Applications: Software for Humanity, October 4--9, 2026, TBD}
+#+LATEX_HEADER: \acmISBN{978-x-xxxx-xxxx-x}
+
+# Author blocks (ox-latex #+AUTHOR is overridden by these)
+#+LATEX_HEADER: \author{Jason Walsh}
+#+LATEX_HEADER: \email{j@wal.sh}
+#+LATEX_HEADER: \orcid{0000-0000-0000-0000}
+#+LATEX_HEADER: \affiliation{%
+#+LATEX_HEADER:   \institution{Independent Researcher}
+#+LATEX_HEADER:   \city{Boston}
+#+LATEX_HEADER:   \state{Massachusetts}
+#+LATEX_HEADER:   \country{USA}
+#+LATEX_HEADER: }
+#+LATEX_HEADER: \author{Claude Opus 4.6}
+#+LATEX_HEADER: \email{claude@anthropic.com}
+#+LATEX_HEADER: \affiliation{%
+#+LATEX_HEADER:   \institution{Anthropic}
+#+LATEX_HEADER:   \city{San Francisco}
+#+LATEX_HEADER:   \state{California}
+#+LATEX_HEADER:   \country{USA}
+#+LATEX_HEADER: }
+#+LATEX_HEADER: \thanks{Claude Opus 4.6 (Extended) contributed to research planning and manuscript preparation via claude.ai on 2026-02-06.}
+
+# CCS Concepts
+#+LATEX_HEADER: \begin{CCSXML}
+#+LATEX_HEADER: <ccs2012>
+#+LATEX_HEADER: <concept>
+#+LATEX_HEADER: <concept_id>10011007.10011006.10011066</concept_id>
+#+LATEX_HEADER: <concept_desc>Software and its engineering~Development frameworks and environments</concept_desc>
+#+LATEX_HEADER: <concept_significance>500</concept_significance>
+#+LATEX_HEADER: </concept>
+#+LATEX_HEADER: <concept>
+#+LATEX_HEADER: <concept_id>10011007.10011074.10011099.10011102</concept_id>
+#+LATEX_HEADER: <concept_desc>Software and its engineering~Software verification and validation</concept_desc>
+#+LATEX_HEADER: <concept_significance>300</concept_significance>
+#+LATEX_HEADER: </concept>
+#+LATEX_HEADER: <concept>
+#+LATEX_HEADER: <concept_id>10011007.10011074.10011111.10011113</concept_id>
+#+LATEX_HEADER: <concept_desc>Software and its engineering~Software evolution</concept_desc>
+#+LATEX_HEADER: <concept_significance>300</concept_significance>
+#+LATEX_HEADER: </concept>
+#+LATEX_HEADER: </ccs2012>
+#+LATEX_HEADER: \end{CCSXML}
+#+LATEX_HEADER: \ccsdesc[500]{Software and its engineering~Development frameworks and environments}
+#+LATEX_HEADER: \ccsdesc[300]{Software and its engineering~Software verification and validation}
+#+LATEX_HEADER: \ccsdesc[300]{Software and its engineering~Software evolution}
+#+LATEX_HEADER: \keywords{hypothesis-driven development, falsificationism, state machines, formal verification, developer tools, decision tracking}
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# To switch paper type, change CLASS_OPTIONS:
+#   sigconf        — SPLASH Tool Demos, most proceedings
+#   sigplan        — OOPSLA, PLDI, ICFP
+#   manuscript     — single-column review submission
+#   anonymous      — add for double-blind
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#+begin_abstract
+We present \textsc{cprr} (Conjecture-Proposition-Refutation-Resolution), a command-line tool and methodology that applies Popperian falsificationism to software development decisions. Rather than tracking tasks or issues, \textsc{cprr} tracks /hypotheses/ through a guarded state machine: conjectures must carry falsifiable predictions before testing, evidence must be recorded before confirmation or refutation, and abandoned hypotheses preserve negative knowledge. The tool enforces epistemological discipline through compile-time-style guards on state transitions, verified via Alloy relational logic. After 19 confirmed and 7 in-testing conjectures on its own development, we report on the methodology's self-hosting properties and present a research plan for scaling to multi-agent concurrent hypothesis testing, CI/CD integration, and cross-repository conjecture aggregation.
+#+end_abstract
+
+# NOTE: \maketitle is inserted automatically by ox-latex after abstract
+
+* Introduction
+
+Software development is rife with implicit hypotheses. "This caching layer will reduce latency by 40%." "Users prefer the wizard flow over the single-page form." "This API will remain stable through Q3." These assumptions drive architecture, staffing, and scheduling decisions, yet most teams lack systematic mechanisms for tracking, testing, and---critically---/refuting/ them.
+
+Karl Popper's falsificationism cite:popper1959logic provides an epistemological framework: a hypothesis has scientific value only if it can, in principle, be shown false. We operationalize this insight as a developer tool. \textsc{cprr} enforces a state machine where every technical conjecture must pass through explicit phases---open, testing, confirmed, refuted, or abandoned---with guards preventing premature conclusions.
+
+The key contributions of this paper are:
+
+1. A /guarded state machine/ for hypothesis lifecycle management, formally verified with Alloy (Section [[#sec:statemachine]]).
+2. A /zero-dependency CLI tool/ implemented in Go that enforces epistemological rigor through transition guards (Section [[#sec:implementation]]).
+3. A /self-hosting evaluation/: 28 conjectures tracked during the tool's own development, including refuted hypotheses that redirected design (Section [[#sec:evaluation]]).
+4. A /research plan/ for multi-agent composition, property-based testing, and CI integration (Section [[#sec:research]]).
+
+* Background and Motivation
+
+** The Problem of Implicit Hypotheses
+
+Issue trackers (Jira, GitHub Issues) model work as tasks with completion states. Decision logs (ADRs cite:nygard2011adr) record choices but not the /predictions/ that motivated them. Neither captures the falsifiable dimension: what evidence would change the decision?
+
+** Popperian Falsificationism
+
+Popper argued that scientific theories cannot be verified, only falsified cite:popper1959logic. A theory gains corroboration by surviving attempts at refutation, not by accumulating confirmations. We adapt this to software: a technical decision gains confidence by surviving tests designed to disprove it.
+
+** Related Work
+
+Hypothesis-driven development has been explored in lean startup methodology cite:ries2011lean and A/B testing frameworks, but these focus on product hypotheses ("users will click this button") rather than /technical/ hypotheses ("this algorithm scales sublinearly"). Decision records cite:nygard2011adr track the "why" but not the "what would change our mind." \textsc{cprr} fills this gap.
+
+* The CPRR State Machine
+:PROPERTIES:
+:CUSTOM_ID: sec:statemachine
+:END:
+
+** States and Transitions
+
+A conjecture moves through five states:
+
+#+begin_src text
+open --[hypothesis]--> testing --[2+ evidence]--> confirmed
+                          |
+                          +--[1+ evidence]--> refuted
+
+Any state --> abandoned (escape hatch)
+#+end_src
+
+The following Mermaid diagram illustrates the complete state machine:
+
+#+begin_src mermaid :file cprr-states.png :exports results
+stateDiagram-v2
+    [*] --> open
+    open --> testing : hypothesis defined
+    testing --> confirmed : 2+ evidence entries
+    testing --> refuted : 1+ evidence entries
+    open --> abandoned : escape hatch
+    testing --> abandoned : escape hatch
+    confirmed --> [*]
+    refuted --> [*]
+    abandoned --> [*]
+#+end_src
+
+** Guard System
+
+Transitions are protected by guard functions that enforce epistemic discipline:
+
+- *Open \to Testing*: Conjecture must contain a non-empty =hypothesis= field with a falsifiable prediction.
+- *Testing \to Confirmed*: At least 2 pieces of evidence must be recorded, preventing single-datapoint conclusions.
+- *Testing \to Refuted*: At least 1 piece of evidence must document the falsification.
+- *Any \to Abandoned*: Always available. Circumstances change; escape hatches prevent zombie hypotheses.
+
+** Formal Verification
+
+The state machine was verified using Alloy cite:jackson2012alloy relational logic (Experiment 002). The Alloy specification verifies two properties:
+
+1. *Safety*: No conjecture in =confirmed= state has fewer than 2 evidence entries. No conjecture in =refuted= state has 0 evidence entries.
+2. *Reachability*: The =abandoned= state is reachable from every other state.
+
+The Alloy Analyzer found no counterexamples within scope 6, providing bounded verification of the guard system.
+
+* Implementation
+:PROPERTIES:
+:CUSTOM_ID: sec:implementation
+:END:
+
+\textsc{cprr} is implemented as a single Go source file (~1440 lines) with zero external dependencies, compiling to a static binary for any platform.
+
+** Storage Model
+
+Conjectures are stored as JSON in a =.cprr/conjectures.json= file, with store resolution following a local-first pattern:
+
+1. Check =.cprr/conjectures.json= in the working directory.
+2. Fall back to =~/.cprr/conjectures.json=.
+3. Local takes precedence; no merge is attempted.
+
+** Command Interface
+
+The CLI provides commands aligned with the hypothesis lifecycle: =init=, =add=, =list=, =show=, =next= (advance state with guard checks), =evidence= (record observations), =status=, =delete=, =quickstart=, and =doctor= (health check). All operations are idempotent.
+
+** Experiment Structure
+
+Each hypothesis investigation is organized as a numbered experiment directory:
+
+#+begin_src text
+experiments/NNN-name/
+  CONJECTURE.md   # Hypothesis and method
+  PROOF.md        # Evidence and resolution
+#+end_src
+
+* Self-Hosting Evaluation
+:PROPERTIES:
+:CUSTOM_ID: sec:evaluation
+:END:
+
+\textsc{cprr} has been used to track its own development decisions. As of this writing: 19 conjectures confirmed (with evidence), 7 conjectures in testing, 2 experiments confirmed (quickstart command, Alloy verification), and 1 experiment in progress (Vale linting).
+
+Key findings from self-hosting include:
+
+*Negative knowledge is valuable.* The decision to use Alloy over TLA+ for state machine verification was itself tracked as a conjecture. The refutation of TLA+ ("relational logic better for small bounded state machines") preserved the reasoning for future reference.
+
+*Guards prevent premature closure.* The requirement for 2+ evidence entries before confirmation forced the team to seek corroborating evidence, catching cases where a single positive test would have led to overconfidence.
+
+*Abandoned is not failed.* Several conjectures were abandoned not because they were wrong but because circumstances changed. The =abandoned= state distinguishes "we don't know" from "we know it's false."
+
+* Research Plan
+:PROPERTIES:
+:CUSTOM_ID: sec:research
+:END:
+
+We identify three themes for continued research, organized as ten experiments with dependency ordering.
+
+** Theme 1: Composition
+
+*Experiment 004* (Refinery Pattern): Can concurrent writes to =conjectures.json= be resolved using last-writer-wins CRDTs with Lamport timestamps per conjecture ID?
+
+*Experiment 005* (Bead Isolation): Do Git worktrees provide sufficient isolation for parallel hypothesis testing when each worktree operates on its own snapshot?
+
+*Experiment 006* (Deconfliction): Can branch-prefixed experiment numbering eliminate collisions in concurrent development?
+
+*Experiment 007* (Multi-Agent Smoke Test): Can two AI coding agents in separate worktrees independently create, test, and resolve conjectures with correct merging?
+
+** Theme 2: Verification
+
+*Experiment 008* (Property-Based Testing): Do guard invariants hold for all reachable states under 10,000 randomly generated transition sequences?
+
+*Experiment 009* (Alloy Liveness): Can the Alloy model verify that every conjecture can eventually reach a terminal state?
+
+*Experiment 010* (CI Guards): Can a GitHub Actions workflow enforce guard invariants at the repository level?
+
+** Theme 3: Adoption
+
+*Experiment 011* (Agent Packaging): Can an AI agent given a =SKILL.md= description autonomously operate the hypothesis lifecycle?
+
+*Experiment 012* (Dogfooding): Does applying \textsc{cprr} to a real project surface untested assumptions with positive ROI on developer time?
+
+*Experiment 013* (Cross-Repo Sync): Can conjecture aggregation across 500+ repositories complete in under 5 seconds?
+
+** Dependency Structure
+
+Experiments are ordered by dependency: Tier 1 (004, 005, 008) unblocks composition and verification. Tier 2 (003, 006, 009, 011) extends guarantees. Tier 3 (007, 010, 012, 013) provides integration capstones.
+
+#+begin_src mermaid :file cprr-deps.png :exports results
+graph TD
+    E004[004 Refinery] --> E007[007 Multi-Agent]
+    E005[005 Bead Isolation] --> E007
+    E006[006 Deconfliction] --> E007
+    E008[008 PBT] --> E010[010 CI Guards]
+    E009[009 Liveness] --> E010
+    E011[011 Agent Pkg] --> E012[012 Dogfood]
+    E012 --> E013[013 Cross-Repo]
+    E007 --> E013
+
+    style E004 fill:#4a9eff,color:#fff
+    style E005 fill:#4a9eff,color:#fff
+    style E008 fill:#4a9eff,color:#fff
+    style E006 fill:#f5a623,color:#fff
+    style E009 fill:#f5a623,color:#fff
+    style E011 fill:#f5a623,color:#fff
+    style E007 fill:#d0021b,color:#fff
+    style E010 fill:#d0021b,color:#fff
+    style E012 fill:#d0021b,color:#fff
+    style E013 fill:#d0021b,color:#fff
+#+end_src
+
+* Tool Availability
+
+\textsc{cprr} is available as open-source software at https://github.com/jwalsh/cprr. The repository includes the Go source, Alloy specifications, experiment documentation, and the Makefile-based build system. The tool compiles to a single static binary with no runtime dependencies.
+
+* Conclusion
+
+\textsc{cprr} demonstrates that Popperian falsificationism can be operationalized as a developer tool with formal guarantees. The guarded state machine prevents epistemological shortcuts; the Alloy verification ensures structural soundness; and the experiment framework creates a persistent record of both confirmed and refuted hypotheses. We believe the preservation of "negative knowledge"---decisions shown to be wrong, and /why/---is an underexplored dimension of software engineering practice.
+
+#+begin_acknowledgments
+Claude Opus 4.6 (Extended) contributed to research planning, sprint metaplanning, and manuscript preparation via the claude.ai sandbox environment on February 6, 2026. This paper was generated from an org-mode source document exported through =ox-latex= and reformatted for ACM =sigconf= style.
+#+end_acknowledgments
+
+#+BIBLIOGRAPHY: cprr plain
+
+# Local Variables:
+# org-latex-classes: (("acmart" "\\documentclass{acmart}" ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}") ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+# org-latex-default-class: "acmart"
+# org-latex-pdf-process: ("pdflatex -interaction nonstopmode -output-directory %o %f" "pdflatex -interaction nonstopmode -output-directory %o %f")
+# End:
