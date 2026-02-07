@@ -20,11 +20,11 @@ var (
 type Status string
 
 const (
-	StatusOpen       Status = "open"
-	StatusTesting    Status = "testing"
-	StatusConfirmed  Status = "confirmed"
-	StatusRefuted    Status = "refuted"
-	StatusAbandoned  Status = "abandoned"
+	StatusOpen      Status = "open"
+	StatusTesting   Status = "testing"
+	StatusConfirmed Status = "confirmed"
+	StatusRefuted   Status = "refuted"
+	StatusAbandoned Status = "abandoned"
 )
 
 // Transition represents a state machine edge
@@ -98,14 +98,14 @@ var forwardPath = map[Status]Status{
 var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "quickstart", "doctor", "help", "version"}
 
 type Conjecture struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Hypothesis  string    `json:"hypothesis"`
-	Evidence    []string  `json:"evidence,omitempty"`
-	Status      Status    `json:"status"`
-	Tags        []string  `json:"tags,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID         int       `json:"id"`
+	Title      string    `json:"title"`
+	Hypothesis string    `json:"hypothesis"`
+	Evidence   []string  `json:"evidence,omitempty"`
+	Status     Status    `json:"status"`
+	Tags       []string  `json:"tags,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type Config struct {

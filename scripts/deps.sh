@@ -9,36 +9,36 @@ YELLOW='\033[0;33m'
 NC='\033[0m'
 
 check_required() {
-    local cmd="$1"
-    local purpose="$2"
-    if command -v "$cmd" &>/dev/null; then
-        local version
-        case "$cmd" in
-            go) version=$(go version 2>&1 | head -1) ;;
-            *) version=$("$cmd" --version 2>&1 | head -1 || echo "unknown") ;;
-        esac
-        echo -e "${GREEN}✓${NC} $cmd: $version"
-        return 0
-    else
-        echo -e "${RED}✗${NC} $cmd: NOT FOUND (required for $purpose)"
-        return 1
-    fi
+	local cmd="$1"
+	local purpose="$2"
+	if command -v "$cmd" &>/dev/null; then
+		local version
+		case "$cmd" in
+		go) version=$(go version 2>&1 | head -1) ;;
+		*) version=$("$cmd" --version 2>&1 | head -1 || echo "unknown") ;;
+		esac
+		echo -e "${GREEN}✓${NC} $cmd: $version"
+		return 0
+	else
+		echo -e "${RED}✗${NC} $cmd: NOT FOUND (required for $purpose)"
+		return 1
+	fi
 }
 
 check_optional() {
-    local cmd="$1"
-    local purpose="$2"
-    if command -v "$cmd" &>/dev/null; then
-        local version
-        case "$cmd" in
-            go) version=$(go version 2>&1 | head -1) ;;
-            tmux) version=$(tmux -V 2>&1 | head -1) ;;
-            *) version=$("$cmd" --version 2>&1 | head -1 || echo "unknown") ;;
-        esac
-        echo -e "${GREEN}✓${NC} $cmd: $version"
-    else
-        echo -e "${YELLOW}○${NC} $cmd: not found (optional, for $purpose)"
-    fi
+	local cmd="$1"
+	local purpose="$2"
+	if command -v "$cmd" &>/dev/null; then
+		local version
+		case "$cmd" in
+		go) version=$(go version 2>&1 | head -1) ;;
+		tmux) version=$(tmux -V 2>&1 | head -1) ;;
+		*) version=$("$cmd" --version 2>&1 | head -1 || echo "unknown") ;;
+		esac
+		echo -e "${GREEN}✓${NC} $cmd: $version"
+	else
+		echo -e "${YELLOW}○${NC} $cmd: not found (optional, for $purpose)"
+	fi
 }
 
 echo "Checking dependencies..."
@@ -78,12 +78,12 @@ check_optional "coq" "Coq proof assistant"
 echo ""
 
 if [[ $MISSING -gt 0 ]]; then
-    echo -e "${RED}Missing required dependencies.${NC}"
-    echo ""
-    echo "Install with:"
-    echo "  brew install go git gh"
-    echo "  # gmake is usually 'make' on Linux, 'gmake' on macOS/BSD"
-    exit 1
+	echo -e "${RED}Missing required dependencies.${NC}"
+	echo ""
+	echo "Install with:"
+	echo "  brew install go git gh"
+	echo "  # gmake is usually 'make' on Linux, 'gmake' on macOS/BSD"
+	exit 1
 fi
 
 echo -e "${GREEN}All required dependencies found.${NC}"

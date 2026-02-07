@@ -7,10 +7,14 @@ DATE=$(date +%Y-%m-%d)
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S)
 
 # Check for required tools
-command -v gh >/dev/null || { echo "Error: gh CLI required"; exit 1; }
+command -v gh >/dev/null || {
+	echo "Error: gh CLI required"
+	exit 1
+}
 
 # Generate summary
-SUMMARY=$(cat <<EOF
+SUMMARY=$(
+	cat <<EOF
 # ${PROJECT_NAME} Overview - ${DATE}
 
 Generated: ${TIMESTAMP}
@@ -32,12 +36,12 @@ $(bd list --status open 2>/dev/null || echo "bd not available")
 ## Experiments
 
 $(ls -d experiments/[0-9]*/ 2>/dev/null | while read dir; do
-    name=$(basename "$dir")
-    status="unknown"
-    [ -f "$dir/PROOF.md" ] && status="CONFIRMED"
-    [ -f "$dir/REFUTATION.md" ] && grep -q "REFUTED" "$dir/REFUTATION.md" 2>/dev/null && status="REFUTED"
-    echo "- ${name}: ${status}"
-done || echo "No experiments found")
+		name=$(basename "$dir")
+		status="unknown"
+		[ -f "$dir/PROOF.md" ] && status="CONFIRMED"
+		[ -f "$dir/REFUTATION.md" ] && grep -q "REFUTED" "$dir/REFUTATION.md" 2>/dev/null && status="REFUTED"
+		echo "- ${name}: ${status}"
+	done || echo "No experiments found")
 
 ## In-Flight Branches
 

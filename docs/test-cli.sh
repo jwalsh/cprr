@@ -9,35 +9,35 @@ CPRR="${CPRR:-$PROJECT_ROOT/cprr}"
 
 # Ensure binary exists
 if [[ ! -x "$CPRR" ]]; then
-    echo "Error: cprr binary not found at $CPRR"
-    echo "Run 'make build' first"
-    exit 1
+	echo "Error: cprr binary not found at $CPRR"
+	echo "Run 'make build' first"
+	exit 1
 fi
 
 PASS=0
 FAIL=0
 
 test_case() {
-    local name="$1"
-    local expected_exit="$2"
-    shift 2
-    local cmd="$*"
+	local name="$1"
+	local expected_exit="$2"
+	shift 2
+	local cmd="$*"
 
-    if output=$($cmd 2>&1); then
-        actual_exit=0
-    else
-        actual_exit=$?
-    fi
+	if output=$($cmd 2>&1); then
+		actual_exit=0
+	else
+		actual_exit=$?
+	fi
 
-    if [[ "$actual_exit" -eq "$expected_exit" ]]; then
-        echo "PASS: $name"
-        ((PASS++)) || true
-    else
-        echo "FAIL: $name (expected exit $expected_exit, got $actual_exit)"
-        echo "  cmd: $cmd"
-        echo "  out: $output"
-        ((FAIL++)) || true
-    fi
+	if [[ "$actual_exit" -eq "$expected_exit" ]]; then
+		echo "PASS: $name"
+		((PASS++)) || true
+	else
+		echo "FAIL: $name (expected exit $expected_exit, got $actual_exit)"
+		echo "  cmd: $cmd"
+		echo "  out: $output"
+		((FAIL++)) || true
+	fi
 }
 
 # Setup: use temp directory to avoid trashing project .cprr/
@@ -55,7 +55,7 @@ test_case "no args shows help" 0 $CPRR
 
 # Init (local by default, idempotent)
 test_case "init default" 0 $CPRR init
-test_case "init exists" 0 $CPRR init              # idempotent: exits 0
+test_case "init exists" 0 $CPRR init # idempotent: exits 0
 test_case "init examples" 0 $CPRR init --examples
 test_case "init force" 0 $CPRR init --force --examples
 
