@@ -1,0 +1,453 @@
+#+TITLE: cprr Research Sprint — Metaplan
+#+AUTHOR: Claude Opus 4.6 (Extended) claude.ai, JW j@wal.sh
+#+DATE: 20260206
+#+PROPERTY: header-args :mkdirp t
+#+STARTUP: showall
+
+* Sprint Overview
+
+The cprr tool is functional with 19 confirmed conjectures and a verified state
+machine (Alloy). The next sprint shifts from "does the tool work?" to "does the
+methodology scale, compose, and integrate?"
+
+Three themes emerge from the open issues and untested hypotheses:
+
+1. *Composition* — Can multiple agents/humans use cprr concurrently without conflicts?
+2. *Verification* — Can we extend formal guarantees beyond the state machine?
+3. *Adoption* — Can we reduce friction for new users and AI agents?
+
+** Current Backlog Snapshot
+
+| ID       | Type       | Summary                              | Status  |
+|----------+------------+--------------------------------------+---------|
+| #1, #2   | Conjecture | (in testing — need evidence)         | testing |
+| #9–#13   | Conjecture | (in testing — need evidence)         | testing |
+| CPRR-lqz | Bead       | Refinery pattern for merge conflicts | open    |
+| CPRR-b6t | Bead       | Branch deconfliction for exp numbers | open    |
+| CPRR-ddd | Bead       | Vale linting for experiment content  | open    |
+| CPRR-a58 | Bead       | Bead semantics for isolation         | open    |
+| CPRR-s83 | Bead       | Project-local conjectures by default | open    |
+| 003      | Experiment | Vale linting                         | wip     |
+
+* Dependency Graph
+
+#+begin_src mermaid :file images/sprint-dependencies.png
+graph TD
+    subgraph "Theme: Composition"
+        E004["004: Refinery Pattern<br/>(CPRR-lqz)"]
+        E005["005: Bead Isolation<br/>(CPRR-a58)"]
+        E006["006: Experiment Deconfliction<br/>(CPRR-b6t)"]
+        E004 --> E007["007: Multi-Agent<br/>Smoke Test"]
+        E005 --> E007
+        E006 --> E007
+    end
+
+    subgraph "Theme: Verification"
+        E002["002: Alloy ✓"]
+        E008["008: Property-Based<br/>Testing (Go rapid)"]
+        E009["009: Alloy Liveness<br/>Extensions"]
+        E002 --> E008
+        E002 --> E009
+        E008 --> E010["010: CI Guard<br/>Verification"]
+        E009 --> E010
+    end
+
+    subgraph "Theme: Adoption"
+        E003["003: Vale Linting (wip)<br/>(CPRR-ddd)"]
+        E011["011: SKILL.md<br/>Agent Packaging"]
+        E012["012: Real-Project<br/>Dogfood"]
+        E003 --> E012
+        E011 --> E007
+        E011 --> E012
+    end
+
+    E007 --> E013["013: Cross-Repo<br/>Conjecture Sync"]
+    E010 --> E013
+    E012 --> E013
+
+    classDef confirmed fill:#4a9,stroke:#333,color:#fff
+    classDef wip fill:#ea4,stroke:#333,color:#fff
+    classDef planned fill:#69c,stroke:#333,color:#fff
+    classDef capstone fill:#c6e,stroke:#333,color:#fff
+
+    class E002 confirmed
+    class E003 wip
+    class E004,E005,E006,E008,E009,E011 planned
+    class E007,E010,E012,E013 capstone
+#+end_src
+
+* Prioritized Experiments
+
+Priority is scored by *impact × (1/effort)* with a bias toward unblocking
+downstream work. Experiments are ordered by recommended execution sequence.
+
+** Tier 1 — Unblock Everything (do first, in parallel if possible)
+
+*** 004: Refinery Pattern for Merge Conflicts
+:PROPERTIES:
+:BEAD: CPRR-lqz
+:PRIORITY: P1
+:EFFORT: M (2–3 days)
+:IMPACT: High — unlocks multi-agent
+:END:
+
+**** Conjecture
+
+Concurrent writes to =conjectures.json= can be resolved without data loss using
+a last-writer-wins CRDT with logical timestamps per conjecture ID.
+
+**** Hypothesis
+
+If each conjecture entry carries a Lamport timestamp and updates are merged by
+max-timestamp-per-ID, then two agents modifying disjoint conjectures
+simultaneously will produce a correct merged result in 100% of test cases.
+
+**** Falsification Criteria
+
+- Any test case where a conjecture written by Agent A is absent from the merged
+  result after Agent B's concurrent write
+- Any test case where evidence ordering within a single conjecture is corrupted
+- Merge operation taking >100ms on a file with 1000 conjectures
+
+**** Method
+
+1. Add =updated_at= (Unix nanos) field to conjecture JSON
+2. Implement =cprr merge <path>= that does per-ID max-timestamp resolution
+3. Simulate concurrent writes with two goroutines + file locking removed
+4. Measure data integrity and latency
+
+*** 005: Bead Semantics for Isolation
+:PROPERTIES:
+:BEAD: CPRR-a58
+:PRIORITY: P1
+:EFFORT: S (1–2 days)
+:IMPACT: High — defines the mental model
+:END:
+
+**** Conjecture
+
+Git worktrees provide sufficient isolation for parallel hypothesis testing if
+each worktree operates on its own =.cprr/= snapshot and merges via experiment 004.
+
+**** Hypothesis
+
+A developer can run =cprr add= in two different worktrees simultaneously, and
+after pushing both branches and merging, the main branch's =.cprr/conjectures.json=
+will contain both conjectures with no manual conflict resolution.
+
+**** Falsification Criteria
+
+- Git merge conflict in =conjectures.json= requiring manual intervention
+- Lost conjecture after merge
+- Duplicate conjecture IDs post-merge
+
+**** Method
+
+1. Script: create two worktrees, add one conjecture in each, push, merge
+2. Run 10 iterations, check for any failure
+3. If conflicts occur, apply experiment 004's refinery merge as a git merge driver
+
+*** 008: Property-Based Testing for Guards
+:PROPERTIES:
+:PRIORITY: P1
+:EFFORT: S (1 day)
+:IMPACT: Medium — strengthens core, fast to do
+:END:
+
+**** Conjecture
+
+The guard system's invariants (no confirmation without 2+ evidence, no refutation
+without 1+ evidence) hold for all reachable states, not just the hand-written
+test cases.
+
+**** Hypothesis
+
+Using Go's =rapid= library to generate random sequences of state transitions, the
+guard system will reject all invalid transitions and accept all valid ones across
+10,000 generated test cases.
+
+**** Falsification Criteria
+
+- Any generated sequence that reaches =confirmed= with <2 evidence entries
+- Any generated sequence that reaches =refuted= with 0 evidence entries
+- Any sequence where =abandoned= is unreachable
+
+**** Method
+
+#+begin_src go :tangle experiments/008-property-testing/property_test.go
+package main
+
+import (
+    "testing"
+    "pgregory.net/rapid"
+)
+
+func TestGuardInvariants(t *testing.T) {
+    rapid.Check(t, func(t *rapid.T) {
+        // Generate random conjecture
+        // Apply random sequence of transitions
+        // Assert invariants at each step
+        // Details TBD after reviewing main.go guard structure
+    })
+}
+#+end_src
+
+** Tier 2 — Extend Guarantees and DX
+
+*** 006: Experiment Number Deconfliction
+:PROPERTIES:
+:BEAD: CPRR-b6t
+:PRIORITY: P2
+:EFFORT: S (1 day)
+:IMPACT: Medium — prevents annoying collisions
+:END:
+
+**** Conjecture
+
+Branch-based experiment numbering (allocating ranges or using branch-prefixed
+IDs) eliminates duplicate experiment numbers when multiple developers create
+experiments concurrently.
+
+**** Hypothesis
+
+If experiment directories use the format =NNN-<branch-short>-name/= (e.g.,
+=004-feat-refinery-pattern/=), then two developers creating experiments on
+different branches will never collide, and the sort order remains meaningful.
+
+**** Falsification Criteria
+
+- Two experiments with identical directory names created on different branches
+- Lexicographic sort of experiment dirs not reflecting creation order within a branch
+
+*** 009: Alloy Liveness Extensions
+:PROPERTIES:
+:PRIORITY: P2
+:EFFORT: M (2 days)
+:IMPACT: Medium — completes formal story
+:END:
+
+**** Conjecture
+
+The existing Alloy model can be extended to verify liveness properties: every
+conjecture can eventually reach a terminal state (confirmed, refuted, or
+abandoned), and no conjecture can be trapped in a non-terminal state.
+
+**** Hypothesis
+
+Adding temporal assertions to =cprr.als= will verify that for all reachable
+states, at least one transition to a terminal state exists. The Alloy Analyzer
+will find no counterexamples within scope 6.
+
+**** Falsification Criteria
+
+- Alloy finds a counterexample: a reachable state with no outgoing transitions
+  to a terminal state
+- The model requires scope >6 to find violations (suggests the property is
+  vacuously true at small scope)
+
+*** 003: Vale Linting (complete in-progress experiment)
+:PROPERTIES:
+:BEAD: CPRR-ddd
+:PRIORITY: P2
+:EFFORT: S (1 day remaining)
+:IMPACT: Medium — improves experiment quality
+:END:
+
+Complete the existing experiment. Validate that Vale can enforce structural and
+prose quality rules on CONJECTURE.md and PROOF.md files.
+
+*** 011: SKILL.md Agent Packaging
+:PROPERTIES:
+:PRIORITY: P2
+:EFFORT: S (1–2 days)
+:IMPACT: High — enables AI agent adoption
+:END:
+
+**** Conjecture
+
+An AI coding agent (Claude Code, Cursor, etc.) given a SKILL.md file describing
+cprr's workflow can autonomously create, test, and advance conjectures without
+human intervention for the mechanical steps.
+
+**** Hypothesis
+
+Given SKILL.md + AGENTS.md, an AI agent tasked with "investigate whether cprr
+supports tags on evidence entries" will: (1) create a conjecture, (2) write a
+test, (3) add evidence, and (4) advance the state correctly — all via CLI
+commands.
+
+**** Falsification Criteria
+
+- Agent invokes a command that doesn't exist
+- Agent skips the hypothesis step (violates guards)
+- Agent marks confirmed without adding sufficient evidence
+- Agent cannot recover from a guard rejection
+
+** Tier 3 — Integration and Capstone
+
+*** 007: Multi-Agent Smoke Test
+:PROPERTIES:
+:PRIORITY: P3
+:EFFORT: M (2–3 days)
+:IMPACT: Very High — validates entire composition theme
+:DEPENDS: 004, 005, 006, 011
+:END:
+
+**** Conjecture
+
+Two AI agents working on the same cprr repository via separate worktrees can
+each independently create, test, and resolve conjectures, with all work
+correctly merged into main.
+
+**** Hypothesis
+
+Running two Claude Code instances in parallel worktrees, each given a different
+hypothesis to investigate, will result in a merged main branch containing both
+conjectures in their correct final states with complete evidence chains.
+
+**** Falsification Criteria
+
+- Any data loss in merged =conjectures.json=
+- Any conjecture in an inconsistent state post-merge
+- Either agent blocked or deadlocked waiting for the other
+
+*** 010: CI Guard Verification
+:PROPERTIES:
+:PRIORITY: P3
+:EFFORT: S (1 day)
+:DEPENDS: 008, 009
+:END:
+
+**** Conjecture
+
+A CI pipeline can enforce that no PR merges if it contains a conjecture
+transition that violates guards, providing the same safety guarantees at the
+repository level that the CLI provides locally.
+
+**** Hypothesis
+
+A GitHub Actions workflow running =cprr doctor= + the property-based test suite
+will catch a deliberately invalid state transition in a test PR and fail the
+build.
+
+**** Falsification Criteria
+
+- CI passes a PR containing a =confirmed= conjecture with 0 evidence entries
+- CI takes >60s to run the full verification suite
+
+*** 012: Real-Project Dogfood
+:PROPERTIES:
+:PRIORITY: P3
+:EFFORT: L (1 week, ongoing)
+:DEPENDS: 003, 011
+:END:
+
+**** Conjecture
+
+Applying cprr to an existing project (e.g., SEFACA or JITIR) will surface at
+least 3 assumptions that would otherwise go untested, and the refuted hypotheses
+will save more development time than the overhead of maintaining conjectures.
+
+**** Hypothesis
+
+Over one week of using cprr on a real project, at least 1 in 5 conjectures will
+be refuted, and the developer (JW) will rate the methodology as net-positive for
+decision quality on a 1–5 scale.
+
+**** Falsification Criteria
+
+- 0 refutations in 10+ conjectures (suggests rubber-stamping, not testing)
+- Developer rates methodology as net-negative (≤2/5) for overhead vs. insight
+- Conjectures become stale (>5 days in =open= without advancing)
+
+*** 013: Cross-Repo Conjecture Sync
+:PROPERTIES:
+:PRIORITY: P3
+:EFFORT: L (3–5 days)
+:DEPENDS: 007, 010, 012
+:END:
+
+**** Conjecture
+
+A =cprr sync= command can aggregate conjectures from multiple repositories into
+a unified view, enabling team-wide hypothesis dashboards without centralized
+storage.
+
+**** Hypothesis
+
+Using =ghq list= to enumerate repositories containing =.cprr/=, a sync command
+can produce a merged JSON view of all conjectures across repos in <5 seconds for
+JW's 500+ repository collection.
+
+**** Falsification Criteria
+
+- Sync takes >5 seconds for 500 repos (even if most lack =.cprr/=)
+- Conjecture ID collisions across repos without namespacing
+- Dashboard data goes stale within 1 hour of a local update
+
+* Sprint Schedule (2-week proposal)
+
+| Week | Day | Experiment                       | Notes                          |
+|------+-----+----------------------------------+--------------------------------|
+|    1 | M   | 008: Property-Based Testing      | Fast win, strengthens core     |
+|    1 | T   | 004: Refinery Pattern (start)    | Core composition primitive     |
+|    1 | W   | 004: Refinery Pattern (cont)     |                                |
+|    1 | R   | 005: Bead Isolation              | Pairs with 004                 |
+|    1 | F   | 003: Vale Linting (complete)     | Close out WIP                  |
+|------+-----+----------------------------------+--------------------------------|
+|    2 | M   | 006: Experiment Deconfliction    | Light day after composition    |
+|    2 | T   | 011: SKILL.md Agent Packaging    | Prep for multi-agent           |
+|    2 | W   | 009: Alloy Liveness              | Formal methods day             |
+|    2 | R   | 007: Multi-Agent Smoke Test      | Capstone for composition theme |
+|    2 | F   | 010: CI Guard + Sprint Retro     | Ship CI, plan next sprint      |
+
+Experiments 012 and 013 roll into Sprint 2 as they require sustained usage data.
+
+* Decision Log
+
+This sprint plan is itself a conjecture:
+
+#+begin_quote
+*Hypothesis:* Executing experiments 004–013 in dependency order over two weeks
+will advance cprr from "functional tool" to "composable methodology" as measured
+by: (a) successful multi-agent smoke test, (b) CI integration running, and
+(c) at least one real-project dogfood session initiated.
+
+*Falsification:* If by end of week 2, the multi-agent smoke test (007) has not
+been attempted, the sprint plan's sequencing was wrong.
+#+end_quote
+
+* Appendix: Experiment Template
+
+Use this for each new experiment directory:
+
+#+begin_src markdown :tangle experiments/TEMPLATE/CONJECTURE.md
+# Experiment NNN: Title
+
+## Status: open
+
+## Conjecture
+
+[What we're investigating]
+
+## Hypothesis
+
+[Specific, falsifiable prediction]
+
+## Method
+
+[Steps to test]
+
+## Falsification Criteria
+
+- [Criterion 1]
+- [Criterion 2]
+
+## Evidence
+
+(none yet)
+
+## Resolution
+
+(pending)
+#+end_src
