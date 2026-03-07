@@ -34,7 +34,7 @@ gaps as risks in the sprint plan.
 
 * Phase 1: Codebase Analysis
 
-#+begin_src text :tangle prompts/01-analysis.txt
+#+begin_src text :tangle ../prompts/01-analysis.txt
 You are a research engineer analyzing a software project to identify untested
 hypotheses, scaling risks, and formalization opportunities.
 
@@ -62,7 +62,7 @@ Format: org-mode with properties blocks. Use CPRR terminology
 
 * Phase 2: Theme Extraction
 
-#+begin_src text :tangle prompts/02-themes.txt
+#+begin_src text :tangle ../prompts/02-themes.txt
 From the codebase analysis, extract 2-4 research themes. Each theme should:
 
 1. Be named with a single word or short phrase (Composition, Verification,
@@ -86,7 +86,7 @@ Output a Mermaid diagram showing inter-theme dependencies.
 Each experiment follows the CPRR lifecycle. The LLM should generate experiments
 in this structure:
 
-#+begin_src text :tangle prompts/03-experiments.txt
+#+begin_src text :tangle ../prompts/03-experiments.txt
 For each theme, design 2-4 experiments. Each experiment MUST contain:
 
 *** NNN: Title
@@ -121,7 +121,7 @@ Scoring: priority = impact × (1/effort), biased toward unblocking downstream.
 
 * Phase 4: Dependency Ordering
 
-#+begin_src text :tangle prompts/04-dependencies.txt
+#+begin_src text :tangle ../prompts/04-dependencies.txt
 Organize experiments into execution tiers:
 
 - Tier 1: Unblock everything. No dependencies on other experiments.
@@ -149,7 +149,7 @@ hypothesis, A must be in an earlier tier than B.
 
 The sprint plan should be authored in org-mode and exported to multiple formats.
 
-#+begin_src text :tangle prompts/05-documents.txt
+#+begin_src text :tangle ../prompts/05-documents.txt
 Generate the following deliverables:
 
 1. SPRINT PLAN (org-mode, canonical source)
@@ -186,7 +186,7 @@ Org-mode conventions:
 
 If the research is targeting a specific venue, the LLM should scaffold a paper.
 
-#+begin_src text :tangle prompts/06-paper.txt
+#+begin_src text :tangle ../prompts/06-paper.txt
 Generate an ACM-formatted paper scaffold with:
 
 1. METADATA
@@ -227,7 +227,7 @@ For single-column review: manuscript to class options.
 
 Use this checklist when running a metaplanning session:
 
-#+begin_src text :tangle prompts/00-checklist.txt
+#+begin_src text :tangle ../prompts/00-checklist.txt
 METAPLANNING SESSION CHECKLIST
 
 □ Gather inputs (source, issues, prior experiments, specs)
@@ -248,7 +248,7 @@ METAPLANNING SESSION CHECKLIST
 
 For a complete metaplanning session, concatenate the prompts in order:
 
-#+begin_src shell :tangle scripts/assemble-prompt.sh :shebang #!/bin/sh
+#+begin_src shell :tangle ../scripts/assemble-prompt.sh :shebang #!/bin/sh
 #!/bin/sh
 # Assemble the full metaplanning prompt from tangled fragments
 cat prompts/00-checklist.txt

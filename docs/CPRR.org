@@ -3,8 +3,8 @@
 #+AUTHOR: JW
 #+DATE: 2025-02-05
 #+PROPERTY: header-args :mkdirp t :eval no
-#+PROPERTY: header-args:bash :tangle scripts/cprr-init.sh :shebang "#!/usr/bin/env bash"
-#+PROPERTY: header-args:markdown :tangle AGENTS.md
+#+PROPERTY: header-args:bash :tangle ../scripts/cprr-init.sh :shebang "#!/usr/bin/env bash"
+#+PROPERTY: header-args:markdown :tangle ../AGENTS.md
 #+STARTUP: overview
 
 * About This Document
@@ -494,7 +494,7 @@ cp .beads/templates/*.toml .beads/templates/  # (done by init script)
 
 ** Scaffolding Script
 
-#+begin_src bash :tangle scripts/cprr-init.sh
+#+begin_src bash :tangle ../scripts/cprr-init.sh
 # cprr-init.sh — Initialize CPRR methodology in a project
 # Usage: bash scripts/cprr-init.sh [project-root]
 

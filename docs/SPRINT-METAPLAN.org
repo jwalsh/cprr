@@ -174,7 +174,7 @@ guard system will reject all invalid transitions and accept all valid ones acros
 
 **** Method
 
-#+begin_src go :tangle experiments/008-property-testing/property_test.go
+#+begin_src go :tangle ../experiments/008-property-testing/property_test.go
 package main
 
 import (
@@ -421,7 +421,7 @@ been attempted, the sprint plan's sequencing was wrong.
 
 Use this for each new experiment directory:
 
-#+begin_src markdown :tangle experiments/TEMPLATE/CONJECTURE.md
+#+begin_src markdown :tangle ../experiments/TEMPLATE/CONJECTURE.md
 # Experiment NNN: Title
 
 ## Status: open

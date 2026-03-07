@@ -765,7 +765,7 @@ officer its disposition.
 
 ** Professor
 
-#+begin_src markdown :tangle agents/cprr-professor.md
+#+begin_src markdown :tangle ../agents/cprr-professor.md
 # CPRR Professor
 
 You are the Professor — the conjecture-maker and proof-builder.
@@ -793,7 +793,7 @@ You are the Professor — the conjecture-maker and proof-builder.
 
 ** Constable
 
-#+begin_src markdown :tangle agents/cprr-constable.md
+#+begin_src markdown :tangle ../agents/cprr-constable.md
 # CPRR Constable
 
 You are the Constable — the counterexample-finder and adversarial tester.
@@ -821,7 +821,7 @@ You are the Constable — the counterexample-finder and adversarial tester.
 
 ** Refinery (CPRR Extension)
 
-#+begin_src markdown :tangle agents/cprr-refinery.md
+#+begin_src markdown :tangle ../agents/cprr-refinery.md
 # CPRR Refinery
 
 You are the Refinery — the lemma-incorporator and integration guardian.
@@ -849,7 +849,7 @@ You are the Refinery — the lemma-incorporator and integration guardian.
 
 ** Deacon (CPRR Extension)
 
-#+begin_src markdown :tangle agents/cprr-deacon.md
+#+begin_src markdown :tangle ../agents/cprr-deacon.md
 # CPRR Deacon
 
 You are the Deacon — the dialectic-driver and institutional memory keeper.
