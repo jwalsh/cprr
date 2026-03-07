@@ -447,8 +447,25 @@
       ],
       "created_at": "2026-02-06T22:22:44.247873-05:00",
       "updated_at": "2026-02-06T22:23:04.43401-05:00"
+    },
+    {
+      "id": 31,
+      "title": "cprr update command integrates with Go CLI conventions for batch mutations",
+      "hypothesis": "A combined update command (status + evidence + metadata in one call) follows the same pattern as gh issue edit, kubectl patch, and docker update — reducing ceremony from 2N commands to N for batch experiment updates",
+      "evidence": [
+        "cprr-update-feature.org: batch update of 5 conjectures required 10 commands instead of 5 — discovered in aygp-dr/qwen3-steering experiment runs",
+        "Pattern matches gh issue edit (--title, --body, --label), kubectl patch (multi-field JSON merge), docker update (--cpus, --memory combinable)"
+      ],
+      "status": "testing",
+      "tags": [
+        "cli",
+        "go",
+        "ux"
+      ],
+      "created_at": "2026-03-06T21:18:02.675691-05:00",
+      "updated_at": "2026-03-06T21:18:09.170271-05:00"
     }
   ],
-  "next_id": 31,
+  "next_id": 32,
   "config": {}
 }

@@ -1,0 +1,62 @@
+#+TITLE: Feature Request: cprr update command
+#+DATE: 2026-03-06
+
+* Problem
+
+Updating a conjecture after an experiment run requires two separate commands:
+
+#+begin_src bash
+cprr status 6 refuted
+cprr evidence 6 "Single-layer wins. Score=10.91 vs multi=6.07"
+#+end_src
+
+This is error-prone — easy to change status and forget to add evidence.
+
+* What I Tried
+
+#+begin_src bash
+# Expected this to work:
+cprr update 6 --status refuted --evidence "..."
+
+# Got:
+# error: unknown command 'update'
+#+end_src
+
+* Proposed Usage
+
+#+begin_src bash
+# Combined status + evidence
+cprr update 6 --status refuted --evidence "Single-layer wins."
+
+# Multiple evidence entries
+cprr update 10 --status refuted \
+  --evidence "Stability=0.12, below 0.5 threshold" \
+  --evidence "Peak at L9, not L12-16 as predicted"
+
+# Metadata-only updates
+cprr update 6 --title "New title" --tag new-tag
+cprr update 6 --remove-tag old-tag
+#+end_src
+
+* Flags
+
+| Flag             | Type   | Description                     |
+|------------------+--------+---------------------------------|
+| --status <state> | string | Set status (bypass guards)      |
+| --evidence <txt> | string | Append evidence (repeatable)    |
+| --title <txt>    | string | Update title                    |
+| --hypothesis     | string | Update hypothesis               |
+| --tag <tag>      | string | Add tag (repeatable)            |
+| --remove-tag     | string | Remove tag (repeatable)         |
+
+At least one flag required. All combinable.
+
+* Context
+
+Discovered during batch updates after running experiments 05 + 06
+in =aygp-dr/qwen3-steering=. Had to update 5 conjectures (C-6,
+C-10, C-11, C-12, C-13) — 10 commands instead of 5.
+
+* See Also
+
+- GitHub issue: https://github.com/jwalsh/cprr/issues/2
