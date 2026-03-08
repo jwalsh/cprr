@@ -133,7 +133,7 @@ func dataDir() string {
 
 func dataFile() string {
 	dir := dataDir()
-	os.MkdirAll(dir, 0755)
+	_ = os.MkdirAll(dir, 0755) // ignore error; will fail on write if needed
 	return filepath.Join(dir, "conjectures.json")
 }
 
@@ -1206,7 +1206,7 @@ No arguments required. Safe to run multiple times.
 		}
 		store.Conjectures = append(store.Conjectures, demo)
 		store.NextID++
-		store.save()
+		_ = store.save() // demo; ignore error
 
 		fmt.Printf(`
   Created: #%d "Quickstart demo conjecture"
@@ -1221,7 +1221,7 @@ No arguments required. Safe to run multiple times.
 	c := findByID(store, demoID)
 	c.Status = StatusTesting
 	c.UpdatedAt = time.Now()
-	store.save()
+	_ = store.save() // demo; ignore error
 
 	fmt.Printf(`  Status:  testing
 
@@ -1234,7 +1234,7 @@ No arguments required. Safe to run multiple times.
 	c.Evidence = append(c.Evidence, "Demo evidence 1: command executed")
 	c.Evidence = append(c.Evidence, "Demo evidence 2: output rendered")
 	c.UpdatedAt = time.Now()
-	store.save()
+	_ = store.save() // demo; ignore error
 
 	fmt.Printf(`  Evidence: 2 pieces added
 
@@ -1245,7 +1245,7 @@ No arguments required. Safe to run multiple times.
 	// Confirm
 	c.Status = StatusConfirmed
 	c.UpdatedAt = time.Now()
-	store.save()
+	_ = store.save() // demo; ignore error
 
 	fmt.Printf(`  Status:  confirmed
 
@@ -1316,14 +1316,14 @@ Examples:
 	if data, err := os.ReadFile(globalPath); err == nil {
 		globalExists = true
 		globalStore = &Store{}
-		json.Unmarshal(data, globalStore)
+		_ = json.Unmarshal(data, globalStore) // ignore parse errors for doctor
 	}
 
 	// Check local store
 	if data, err := os.ReadFile(localPath); err == nil {
 		localExists = true
 		localStore = &Store{}
-		json.Unmarshal(data, localStore)
+		_ = json.Unmarshal(data, localStore) // ignore parse errors for doctor
 	}
 
 	fmt.Println("cprr doctor")
@@ -1418,7 +1418,7 @@ Examples:
 
 		// Perform migration
 		fmt.Println("Migrating ~/.cprr → .cprr ...")
-		os.MkdirAll(".cprr", 0755)
+		_ = os.MkdirAll(".cprr", 0755) // ignore; will fail on write if needed
 		data, _ := json.MarshalIndent(globalStore, "", "  ")
 		if err := os.WriteFile(localPath, data, 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "error: failed to write local store: %v\n", err)
