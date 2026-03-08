@@ -35,7 +35,7 @@ $(bd list --status open 2>/dev/null || echo "bd not available")
 
 ## Experiments
 
-$(ls -d experiments/[0-9]*/ 2>/dev/null | while read dir; do
+$(find experiments -maxdepth 1 -type d -name '[0-9]*' 2>/dev/null | sort | while read -r dir; do
 		name=$(basename "$dir")
 		status="unknown"
 		[ -f "$dir/PROOF.md" ] && status="CONFIRMED"
