@@ -464,8 +464,32 @@
       ],
       "created_at": "2026-03-06T21:18:02.675691-05:00",
       "updated_at": "2026-03-06T21:18:09.170271-05:00"
+    },
+    {
+      "id": 33,
+      "title": "Add confirm/refute shortcut commands",
+      "hypothesis": "Users expect cprr confirm \u003cid\u003e and cprr refute \u003cid\u003e as shortcuts; adding these will reduce friction (306 confirm attempts in logs)",
+      "evidence": [
+        "Session logs show 306 attempts at cprr confirm, proving user expectation",
+        "Implementation complete: confirm, refute, update commands all working with proper guards"
+      ],
+      "status": "confirmed",
+      "created_at": "2026-03-07T21:22:22.111274666-05:00",
+      "updated_at": "2026-03-07T21:25:22.605047194-05:00"
+    },
+    {
+      "id": 34,
+      "title": "Mining session logs reveals expected commands",
+      "hypothesis": "Analyzing ~/.claude/projects/*/*.jsonl for 'cprr' patterns identifies commands users expect but are missing, improving UX",
+      "evidence": [
+        "grep -oh 'cprr [a-z]*' revealed confirm(306), refute(31), update(24) as expected but missing",
+        "Implemented all three based on log analysis - users will no longer see 'unknown command'"
+      ],
+      "status": "confirmed",
+      "created_at": "2026-03-07T21:25:37.652790874-05:00",
+      "updated_at": "2026-03-07T21:25:50.184188723-05:00"
     }
   ],
-  "next_id": 32,
+  "next_id": 35,
   "config": {}
 }

@@ -95,7 +95,7 @@ var forwardPath = map[Status]Status{
 }
 
 // Available commands for suggestions
-var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "quickstart", "doctor", "help", "version"}
+var commands = []string{"init", "add", "list", "show", "next", "evidence", "status", "delete", "confirm", "refute", "update", "quickstart", "doctor", "help", "version"}
 
 type Conjecture struct {
 	ID         int       `json:"id"`
@@ -365,6 +365,12 @@ func main() {
 		cmdStatus(store, cmdArgs)
 	case "delete", "rm":
 		cmdDelete(store, cmdArgs)
+	case "confirm":
+		cmdConfirm(store, cmdArgs)
+	case "refute":
+		cmdRefute(store, cmdArgs)
+	case "update":
+		cmdUpdate(store, cmdArgs)
 	default:
 		fmt.Fprintf(os.Stderr, "error: unknown command '%s'\n", cmd)
 		if suggestion := suggestCommand(cmd); suggestion != "" {
@@ -1098,6 +1104,272 @@ Example:
 	os.Exit(1)
 }
 
+// cmdConfirm is a shortcut for: cprr status <id> confirmed
+func cmdConfirm(store *Store, args []string) {
+	var showHelp, force bool
+	var positional []string
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "-h", "--help":
+			showHelp = true
+		case "-f", "--force":
+			force = true
+		default:
+			positional = append(positional, args[i])
+		}
+	}
+
+	if showHelp {
+		fmt.Print(`Usage: cprr confirm <id> [flags]
+
+Shortcut to mark a conjecture as confirmed.
+Equivalent to: cprr status <id> confirmed
+
+Arguments:
+  <id>          Conjecture ID
+
+Flags:
+  -f, --force   Bypass guard checks
+  -h, --help    Show this help
+
+Example:
+  cprr confirm 1
+  cprr confirm 3 --force
+`)
+		return
+	}
+
+	if len(positional) < 1 {
+		fmt.Fprintln(os.Stderr, "error: missing conjecture ID")
+		fmt.Fprintln(os.Stderr, "\nUsage: cprr confirm <id>")
+		os.Exit(1)
+	}
+
+	id, err := strconv.Atoi(positional[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: invalid ID '%s'\n", positional[0])
+		os.Exit(1)
+	}
+
+	c := findByID(store, id)
+	if c == nil {
+		fmt.Fprintf(os.Stderr, "error: conjecture #%d not found\n", id)
+		os.Exit(1)
+	}
+
+	newStatus := StatusConfirmed
+
+	// Check transition validity
+	trans := findTransition(c.Status, newStatus)
+	if trans == nil {
+		fmt.Fprintf(os.Stderr, "error: cannot confirm from '%s' status\n", c.Status)
+		fmt.Fprintf(os.Stderr, "\nHint: conjecture must be in 'testing' state first\n")
+		os.Exit(1)
+	}
+
+	// Check guards
+	if !force {
+		violations := checkGuards(c, trans.Guards)
+		if len(violations) > 0 {
+			fmt.Fprintf(os.Stderr, "Cannot confirm #%d\n\nGuard violations:\n", id)
+			for _, v := range violations {
+				fmt.Fprintf(os.Stderr, "  %s: %s\n", v.Name, v.Message)
+			}
+			fmt.Fprintln(os.Stderr, "\nUse --force to bypass (not recommended)")
+			os.Exit(1)
+		}
+	}
+
+	c.Status = newStatus
+	c.UpdatedAt = time.Now()
+	if err := store.save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to save: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Confirmed #%d: %s\n", c.ID, c.Title)
+}
+
+// cmdRefute is a shortcut for: cprr status <id> refuted
+func cmdRefute(store *Store, args []string) {
+	var showHelp, force bool
+	var positional []string
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "-h", "--help":
+			showHelp = true
+		case "-f", "--force":
+			force = true
+		default:
+			positional = append(positional, args[i])
+		}
+	}
+
+	if showHelp {
+		fmt.Print(`Usage: cprr refute <id> [flags]
+
+Shortcut to mark a conjecture as refuted.
+Equivalent to: cprr status <id> refuted
+
+Arguments:
+  <id>          Conjecture ID
+
+Flags:
+  -f, --force   Bypass guard checks
+  -h, --help    Show this help
+
+Example:
+  cprr refute 1
+  cprr refute 3 --force
+`)
+		return
+	}
+
+	if len(positional) < 1 {
+		fmt.Fprintln(os.Stderr, "error: missing conjecture ID")
+		fmt.Fprintln(os.Stderr, "\nUsage: cprr refute <id>")
+		os.Exit(1)
+	}
+
+	id, err := strconv.Atoi(positional[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: invalid ID '%s'\n", positional[0])
+		os.Exit(1)
+	}
+
+	c := findByID(store, id)
+	if c == nil {
+		fmt.Fprintf(os.Stderr, "error: conjecture #%d not found\n", id)
+		os.Exit(1)
+	}
+
+	newStatus := StatusRefuted
+
+	// Check transition validity
+	trans := findTransition(c.Status, newStatus)
+	if trans == nil {
+		fmt.Fprintf(os.Stderr, "error: cannot refute from '%s' status\n", c.Status)
+		fmt.Fprintf(os.Stderr, "\nHint: conjecture must be in 'testing' state first\n")
+		os.Exit(1)
+	}
+
+	// Check guards
+	if !force {
+		violations := checkGuards(c, trans.Guards)
+		if len(violations) > 0 {
+			fmt.Fprintf(os.Stderr, "Cannot refute #%d\n\nGuard violations:\n", id)
+			for _, v := range violations {
+				fmt.Fprintf(os.Stderr, "  %s: %s\n", v.Name, v.Message)
+			}
+			fmt.Fprintln(os.Stderr, "\nUse --force to bypass (not recommended)")
+			os.Exit(1)
+		}
+	}
+
+	c.Status = newStatus
+	c.UpdatedAt = time.Now()
+	if err := store.save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to save: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Refuted #%d: %s\n", c.ID, c.Title)
+}
+
+// cmdUpdate modifies an existing conjecture's title or hypothesis
+func cmdUpdate(store *Store, args []string) {
+	var showHelp bool
+	var newTitle, newHypothesis string
+	var positional []string
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "-h", "--help":
+			showHelp = true
+		case "-t", "--title":
+			if i+1 < len(args) {
+				i++
+				newTitle = args[i]
+			}
+		case "--hypothesis":
+			if i+1 < len(args) {
+				i++
+				newHypothesis = args[i]
+			}
+		default:
+			positional = append(positional, args[i])
+		}
+	}
+
+	if showHelp {
+		fmt.Print(`Usage: cprr update <id> [flags]
+
+Update an existing conjecture's title or hypothesis.
+
+Arguments:
+  <id>              Conjecture ID
+
+Flags:
+  -t, --title       New title
+  --hypothesis      New hypothesis
+  -h, --help        Show this help
+
+Examples:
+  cprr update 1 -t "Better title"
+  cprr update 2 --hypothesis "Revised hypothesis"
+  cprr update 3 -t "New title" --hypothesis "New hypothesis"
+`)
+		return
+	}
+
+	if len(positional) < 1 {
+		fmt.Fprintln(os.Stderr, "error: missing conjecture ID")
+		fmt.Fprintln(os.Stderr, "\nUsage: cprr update <id> [flags]")
+		os.Exit(1)
+	}
+
+	id, err := strconv.Atoi(positional[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: invalid ID '%s'\n", positional[0])
+		os.Exit(1)
+	}
+
+	c := findByID(store, id)
+	if c == nil {
+		fmt.Fprintf(os.Stderr, "error: conjecture #%d not found\n", id)
+		os.Exit(1)
+	}
+
+	if newTitle == "" && newHypothesis == "" {
+		fmt.Fprintln(os.Stderr, "error: nothing to update")
+		fmt.Fprintln(os.Stderr, "\nUse -t/--title or --hypothesis to specify changes")
+		os.Exit(1)
+	}
+
+	if newTitle != "" {
+		c.Title = newTitle
+	}
+	if newHypothesis != "" {
+		c.Hypothesis = newHypothesis
+	}
+	c.UpdatedAt = time.Now()
+
+	if err := store.save(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: failed to save: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Updated #%d\n", c.ID)
+	if newTitle != "" {
+		fmt.Printf("  title: %s\n", c.Title)
+	}
+	if newHypothesis != "" {
+		fmt.Printf("  hypothesis: %s\n", c.Hypothesis)
+	}
+}
+
 func findByID(store *Store, id int) *Conjecture {
 	for i := range store.Conjectures {
 		if store.Conjectures[i].ID == id {
@@ -1114,6 +1386,27 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// findTransition looks up the transition from one status to another
+func findTransition(from, to Status) *Transition {
+	for i := range transitions {
+		if transitions[i].From == from && transitions[i].To == to {
+			return &transitions[i]
+		}
+	}
+	return nil
+}
+
+// checkGuards returns all guard violations for a transition
+func checkGuards(c *Conjecture, guards []Guard) []Guard {
+	var violations []Guard
+	for _, guard := range guards {
+		if !guard.Check(c) {
+			violations = append(violations, guard)
+		}
+	}
+	return violations
 }
 
 func cmdQuickstart(args []string) {
